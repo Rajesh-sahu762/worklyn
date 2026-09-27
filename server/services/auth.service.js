@@ -1,6 +1,15 @@
 const User = require("../models/User");
 const { hashPassword } = require("../utils/hashPassword");
 const generateOtp = require("../utils/generateOtp");
+const User = require("../models/User");
+const RefreshToken = require("../models/RefreshToken");
+const { hashPassword, comparePassword } = require("../utils/hashPassword");
+const generateOtp = require("../utils/generateOtp");
+const {
+  generateAccessToken,
+  generateRefreshToken,
+} = require("../utils/generateToken");
+const hashToken = require("../utils/hashToken");
 
 const registerUser = async ({
   firstName,
@@ -53,7 +62,6 @@ const registerUser = async ({
   };
 };
 
-
 const verifyEmail = async ({ userId, otp }) => {
   const user = await User.findById(userId);
 
@@ -96,7 +104,6 @@ const verifyEmail = async ({ userId, otp }) => {
   };
 };
 
-
 const resendVerificationOtp = async ({ email }) => {
   const user = await User.findOne({
     email: email.toLowerCase().trim(),
@@ -116,9 +123,7 @@ const resendVerificationOtp = async ({ email }) => {
 
   const otp = generateOtp();
 
-  const otpExpiresAt = new Date(
-    Date.now() + 10 * 60 * 1000
-  );
+  const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
   user.otp = otp;
   user.otpExpiresAt = otpExpiresAt;
@@ -133,9 +138,96 @@ const resendVerificationOtp = async ({ email }) => {
   };
 };
 
+const loginUser = async ({
+  email,
+  password,
+  userAgent,
+  ipAddress,
+}) => {
+  // 1. Find user
+  const user = await User.findOne({
+    email: email.toLowerCase().trim(),
+  });
+
+  if (!user) {
+    throw new Error("Invalid email or password");
+  }
+
+  // 2. Deleted account
+  if (user.isDeleted) {
+    throw new Error("Account has been deleted");
+  }
+
+  // 3. Deactivated account
+  if (user.deactivatedAt) {
+    throw new Error("Account is deactivated");
+  }
+
+  // 4. Email verification
+  if (!user.isVerified) {
+    throw new Error("Please verify your email first");
+  }
+
+  // 5. Password
+  if (!user.passwordHash) {
+    throw new Error(
+      "This account does not use password login"
+    );
+  }
+
+  const isPasswordCorrect = await comparePassword(
+    password,
+    user.passwordHash
+  );
+
+  if (!isPasswordCorrect) {
+    throw new Error("Invalid email or password");
+  }
+
+  // 6. Generate tokens
+  const accessToken = generateAccessToken(user._id);
+
+  const refreshToken = generateRefreshToken(user._id);
+
+  // 7. Hash refresh token before storing
+  const tokenHash = hashToken(refreshToken);
+
+  // 8. Calculate expiry
+  const expiresAt = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000
+  );
+
+  // 9. Save refresh token
+  await RefreshToken.create({
+    user: user._id,
+    tokenHash,
+    expiresAt,
+    userAgent: userAgent || "",
+    ipAddress: ipAddress || "",
+  });
+
+  // 10. Update last login
+  user.lastLoginAt = new Date();
+
+  await user.save();
+
+  return {
+    user: {
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      profileImage: user.profileImage,
+      isVerified: user.isVerified,
+    },
+    accessToken,
+    refreshToken,
+  };
+};
 
 module.exports = {
   registerUser,
   verifyEmail,
   resendVerificationOtp,
+  loginUser
 };

@@ -3,11 +3,12 @@ const router = express.Router();
 const {
   register,
   verifyEmailController,
-  resendVerificationOtpController
+  resendVerificationOtpController,
+  login
 } = require("../controllers/auth.controller");
 
 // Login Route
-// router.post("/login", LoginUser);
+router.post("/login", login);
 
 router.post("/register", register);
 

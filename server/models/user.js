@@ -85,6 +85,10 @@ const userSchema = new mongoose.Schema(
       default: null,
       sparse: true,
     },
+    lastLoginAt: {
+      type: Date,
+      default: null,
+    },
 
     provider: {
       type: String,
@@ -94,7 +98,7 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model("User", userSchema);

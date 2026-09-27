@@ -1,5 +1,5 @@
 const { validateRegister } = require("../validators/auth.validator");
-const { registerUser , verifyEmail , resendVerificationOtp } = require("../services/auth.service");
+const { registerUser , verifyEmail , resendVerificationOtp, loginUser } = require("../services/auth.service");
 
 const register = async (req, res) => {
   try {
@@ -163,9 +163,73 @@ const resendVerificationOtpController = async (req, res) => {
 };
 
 
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
+    const result = await loginUser({
+      email,
+      password,
+      userAgent: req.get("user-agent"),
+      ipAddress: req.ip,
+    });
+
+    // Refresh token in HttpOnly cookie
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite:
+        process.env.NODE_ENV === "production"
+          ? "none"
+          : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      data: {
+        user: result.user,
+        accessToken: result.accessToken,
+      },
+    });
+  } catch (error) {
+    console.error("Login Error:", error);
+
+    const clientErrors = [
+      "Invalid email or password",
+      "Account has been deleted",
+      "Account is deactivated",
+      "Please verify your email first",
+      "This account does not use password login",
+    ];
+
+    if (clientErrors.includes(error.message)) {
+      return res.status(401).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+    });
+  }
+};
+
+
 
 module.exports = {
   register,
   verifyEmailController,
-  resendVerificationOtpController
+  resendVerificationOtpController,
+  login
 };
