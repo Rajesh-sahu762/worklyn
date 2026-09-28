@@ -1,5 +1,5 @@
 const { validateRegister } = require("../validators/auth.validator");
-const { registerUser , verifyEmail , resendVerificationOtp, loginUser } = require("../services/auth.service");
+const { registerUser , verifyEmail , resendVerificationOtp, loginUser, refreshAccessToken } = require("../services/auth.service");
 
 const register = async (req, res) => {
   try {
@@ -226,10 +226,65 @@ const login = async (req, res) => {
 };
 
 
+const getMe = async (req, res) => {
+  return res.status(200).json({
+    success: true,
+    data: {
+      user: req.user,
+    },
+  });
+};
+
+
+const refresh = async (req, res) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    const result = await refreshAccessToken(
+      refreshToken
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Access token refreshed",
+      data: {
+        accessToken: result.accessToken,
+      },
+    });
+  } catch (error) {
+    console.error("Refresh Token Error:", error);
+
+    const clientErrors = [
+      "Refresh token is required",
+      "Refresh token expired",
+      "Invalid refresh token",
+      "Refresh token not found",
+      "Refresh token has been revoked",
+      "User not found",
+      "Account has been deleted",
+      "Account is deactivated",
+      "Email verification required",
+    ];
+
+    if (clientErrors.includes(error.message)) {
+      return res.status(401).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+    });
+  }
+};
 
 module.exports = {
   register,
   verifyEmailController,
   resendVerificationOtpController,
-  login
+  login,
+  getMe,
+  refresh
 };

@@ -4,15 +4,21 @@ const {
   register,
   verifyEmailController,
   resendVerificationOtpController,
-  login
+  login,
+  getMe,
+  refresh
 } = require("../controllers/auth.controller");
+
+const authenticate = require("../middlewares/authenticate");
 
 // Login Route
 router.post("/login", login);
 
 router.post("/register", register);
 
-// router.post("/refresh", refreshToken);
+router.get("/me", authenticate , getMe)
+
+router.post("/refresh", refresh);
 
 // router.post("/logout", logoutUser);
 
