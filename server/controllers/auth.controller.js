@@ -1,5 +1,5 @@
 const { validateRegister } = require("../validators/auth.validator");
-const { registerUser , verifyEmail , resendVerificationOtp, loginUser, refreshAccessToken } = require("../services/auth.service");
+const { registerUser , verifyEmail , resendVerificationOtp, loginUser, refreshAccessToken, logoutUser } = require("../services/auth.service");
 
 const register = async (req, res) => {
   try {
@@ -240,9 +240,21 @@ const refresh = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
 
-    const result = await refreshAccessToken(
-      refreshToken
-    );
+    const result = await refreshAccessToken({
+      refreshToken,
+      userAgent: req.get("user-agent"),
+      ipAddress: req.ip,
+    });
+
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite:
+        process.env.NODE_ENV === "production"
+          ? "none"
+          : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     return res.status(200).json({
       success: true,
@@ -252,33 +264,40 @@ const refresh = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Refresh Token Error:", error);
-
-    const clientErrors = [
-      "Refresh token is required",
-      "Refresh token expired",
-      "Invalid refresh token",
-      "Refresh token not found",
-      "Refresh token has been revoked",
-      "User not found",
-      "Account has been deleted",
-      "Account is deactivated",
-      "Email verification required",
-    ];
-
-    if (clientErrors.includes(error.message)) {
-      return res.status(401).json({
-        success: false,
-        message: error.message,
-      });
-    }
-
-    return res.status(500).json({
+    return res.status(401).json({
       success: false,
-      message: "Something went wrong",
+      message: error.message,
     });
   }
 };
+
+const logout = async (req,res) => {
+
+  try {
+    const refreshToken = req.cookies.refreshToken;
+    await logoutUser(refreshToken);
+
+    res.clearCookie("refreshToken",{
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      samesite: process.env.NODE_ENV === "production" ?"none" :"lax"
+    })
+
+    return res.status(200).json({
+      success: true,
+      message: "Logged Out Successfully"
+    })
+
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    })
+  }
+
+}
+
 
 module.exports = {
   register,
@@ -286,5 +305,6 @@ module.exports = {
   resendVerificationOtpController,
   login,
   getMe,
-  refresh
+  refresh,
+  logout
 };

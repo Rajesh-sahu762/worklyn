@@ -1,3 +1,4 @@
+const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const generateOtp = require("../utils/generateOtp");
 const RefreshToken = require("../models/RefreshToken");
@@ -211,31 +212,31 @@ const loginUser = async ({ email, password, userAgent, ipAddress }) => {
 };
 
 
-const refreshAccessToken = async (refreshToken) => {
+const refreshAccessToken = async ({
+  refreshToken,
+  userAgent,
+  ipAddress,
+}) => {
   if (!refreshToken) {
     throw new Error("Refresh token is required");
   }
 
+  // 1. Verify refresh token JWT
   let decoded;
 
   try {
     decoded = jwt.verify(
       refreshToken,
-      process.env.JWT_REFRESH_TOKEN
-      
+      process.env.JWT_REFRESH_SECRET
     );
   } catch (error) {
-    if (error.name === "TokenExpiredError") {
-      throw new Error("Refresh token expired");
-    }
-
-    throw new Error("Invalid refresh token");
+    throw new Error("Invalid or expired refresh token");
   }
 
-  // Hash received refresh token
+  // 2. Hash incoming refresh token
   const tokenHash = hashToken(refreshToken);
 
-  // Find token in DB
+  // 3. Find token in DB
   const storedToken = await RefreshToken.findOne({
     tokenHash,
     user: decoded.userId,
@@ -245,17 +246,17 @@ const refreshAccessToken = async (refreshToken) => {
     throw new Error("Refresh token not found");
   }
 
-  // Token revoked?
+  // 4. Prevent reuse of revoked token
   if (storedToken.revokedAt) {
     throw new Error("Refresh token has been revoked");
   }
 
-  // Database expiry check
+  // 5. Check DB expiry
   if (storedToken.expiresAt < new Date()) {
-    throw new Error("Refresh token expired");
+    throw new Error("Refresh token has expired");
   }
 
-  // Check user
+  // 6. Find user
   const user = await User.findById(decoded.userId);
 
   if (!user) {
@@ -263,24 +264,68 @@ const refreshAccessToken = async (refreshToken) => {
   }
 
   if (user.isDeleted) {
-    throw new Error("Account has been deleted");
+    throw new Error("User account has been deleted");
   }
 
   if (user.deactivatedAt) {
-    throw new Error("Account is deactivated");
+    throw new Error("User account is deactivated");
   }
 
   if (!user.isVerified) {
-    throw new Error("Email verification required");
+    throw new Error("Email is not verified");
   }
 
-  // Generate new access token
-  const accessToken = generateAccessToken(user._id);
+  // 7. Revoke OLD refresh token
+  storedToken.revokedAt = new Date();
+  await storedToken.save();
+
+  // 8. Generate NEW tokens
+  const newAccessToken = generateAccessToken(user._id);
+
+  const newRefreshToken = generateRefreshToken(user._id);
+
+  // 9. Hash NEW refresh token
+  const newTokenHash = hashToken(newRefreshToken);
+
+  // 10. Store NEW refresh token
+  const newRefreshTokenDoc = await RefreshToken.create({
+    user: user._id,
+    tokenHash: newTokenHash,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    userAgent: userAgent || "",
+    ipAddress: ipAddress || "",
+  });
 
   return {
-    accessToken,
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
+    refreshTokenId: newRefreshTokenDoc._id,
   };
 };
+
+
+const logoutUser = async (refreshToken) => {
+
+  if (!refreshToken) {
+      throw new Error("Refresh Token Is Required")    
+  }
+
+  const tokenHash = hashToken(refreshToken);
+
+  const storedToken = await refreshToken.findOne({
+    tokenHash,
+  });
+  
+  if (!storedToken) {
+    return
+  }
+
+  if (!storedToken.revokedAt) {
+    storedToken.revokedAt = new Date();
+    await storedToken.save();
+  }
+
+}
 
 
 module.exports = {
@@ -288,5 +333,6 @@ module.exports = {
   verifyEmail,
   resendVerificationOtp,
   loginUser,
-  refreshAccessToken
+  refreshAccessToken,
+  logoutUser
 };

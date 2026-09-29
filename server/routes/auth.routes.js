@@ -6,7 +6,8 @@ const {
   resendVerificationOtpController,
   login,
   getMe,
-  refresh
+  refresh,
+  logout
 } = require("../controllers/auth.controller");
 
 const authenticate = require("../middlewares/authenticate");
@@ -20,7 +21,7 @@ router.get("/me", authenticate , getMe)
 
 router.post("/refresh", refresh);
 
-// router.post("/logout", logoutUser);
+router.post("/logout", logout);
 
 router.post("/verify-email", verifyEmailController);
 
