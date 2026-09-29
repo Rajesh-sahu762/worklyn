@@ -89,5 +89,5 @@ module.exports = {
   createOrganization,
   getUserOrganizations,
   getOrganizationById,
-
+  updateOrganization,
 };

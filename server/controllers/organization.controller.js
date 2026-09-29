@@ -1,11 +1,13 @@
 const {
   createOrganization,
   getUserOrganizations,
-  getOrganizationById
+  getOrganizationById,
+  updateOrganization,
 } = require("../services/organization.service");
 
 const {
   validateCreateOrganization,
+  validateUpdateOrganization,
 } = require("../validators/organization.validator");
 
 const createOrganizationController = async (req, res) => {
@@ -20,11 +22,7 @@ const createOrganizationController = async (req, res) => {
       });
     }
 
-    const {
-      name,
-      slug,
-      description,
-    } = req.body;
+    const { name, slug, description } = req.body;
 
     const organization = await createOrganization({
       name,
@@ -57,9 +55,7 @@ const createOrganizationController = async (req, res) => {
 
 const getMyOrganizations = async (req, res) => {
   try {
-    const organizations = await getUserOrganizations(
-      req.user._id
-    );
+    const organizations = await getUserOrganizations(req.user._id);
 
     return res.status(200).json({
       success: true,
@@ -77,9 +73,7 @@ const getMyOrganizations = async (req, res) => {
 
 const getOrganizationDetails = async (req, res) => {
   try {
-    const organization = await getOrganizationById(
-      req.params.organizationId
-    );
+    const organization = await getOrganizationById(req.params.organizationId);
 
     return res.status(200).json({
       success: true,
@@ -103,10 +97,55 @@ const getOrganizationDetails = async (req, res) => {
   }
 };
 
+const updateOrganizationController = async (req, res) => {
+  try {
+    const errors = validateUpdateOrganization(
+      req.body
+    );
+
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors,
+      });
+    }
+
+    const organization =
+      await updateOrganization({
+        organizationId:
+          req.params.organizationId,
+
+        name: req.body.name,
+        description: req.body.description,
+        logo: req.body.logo,
+      });
+
+    return res.status(200).json({
+      success: true,
+      message: "Organization updated successfully",
+      data: {
+        organization,
+      },
+    });
+  } catch (error) {
+    if (error.message === "Organization not found") {
+      return res.status(404).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 module.exports = {
   createOrganizationController,
   getMyOrganizations,
   getOrganizationDetails,
-
+  updateOrganizationController,
 };
