@@ -305,27 +305,25 @@ const refreshAccessToken = async ({
 
 
 const logoutUser = async (refreshToken) => {
-
   if (!refreshToken) {
-      throw new Error("Refresh Token Is Required")    
+    throw new Error("Refresh token is required");
   }
 
   const tokenHash = hashToken(refreshToken);
 
-  const storedToken = await refreshToken.findOne({
+  const storedToken = await RefreshToken.findOne({
     tokenHash,
   });
-  
+
   if (!storedToken) {
-    return
+    return;
   }
 
   if (!storedToken.revokedAt) {
     storedToken.revokedAt = new Date();
     await storedToken.save();
   }
-
-}
+};
 
 
 module.exports = {
