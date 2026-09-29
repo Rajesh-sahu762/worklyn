@@ -1,6 +1,5 @@
 const Organization = require("../models/Organization");
 const OrganizationMember = require("../models/OrganizationMember");
-
 const createOrganization = async ({ name, slug, description, userId }) => {
   const existingOrganization = await Organization.findOne({
     slug: slug.toLowerCase(),
@@ -43,8 +42,52 @@ const getUserOrganizations = async (userId) => {
   }));
 };
 
+const getOrganizationById = async (organizationId) => {
+  const organization = await Organization.findById(
+    organizationId
+  ).select("-__v");
+
+  if (!organization) {
+    throw new Error("Organization not found");
+  }
+
+  return organization;
+};
+
+const updateOrganization = async ({
+  organizationId,
+  name,
+  description,
+  logo,
+}) => {
+  const organization = await Organization.findById(
+    organizationId
+  );
+
+  if (!organization) {
+    throw new Error("Organization not found");
+  }
+
+  if (name !== undefined) {
+    organization.name = name.trim();
+  }
+
+  if (description !== undefined) {
+    organization.description = description.trim();
+  }
+
+  if (logo !== undefined) {
+    organization.logo = logo.trim();
+  }
+
+  await organization.save();
+
+  return organization;
+};
+
 module.exports = {
   createOrganization,
   getUserOrganizations,
-  
+  getOrganizationById,
+
 };

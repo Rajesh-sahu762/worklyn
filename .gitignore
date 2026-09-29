@@ -36,3 +36,9 @@ Thumbs.db
 
 # Debug files
 *.tgz
+
+# Ignore Postman files
+postman/
+*.postman_collection.json
+*.postman_environment.json
+*.resources.yaml

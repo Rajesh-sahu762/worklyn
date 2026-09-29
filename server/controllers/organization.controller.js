@@ -1,6 +1,7 @@
 const {
   createOrganization,
-  getUserOrganizations
+  getUserOrganizations,
+  getOrganizationById
 } = require("../services/organization.service");
 
 const {
@@ -74,7 +75,38 @@ const getMyOrganizations = async (req, res) => {
   }
 };
 
+const getOrganizationDetails = async (req, res) => {
+  try {
+    const organization = await getOrganizationById(
+      req.params.organizationId
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        organization,
+        role: req.organizationMembership.role,
+      },
+    });
+  } catch (error) {
+    if (error.message === "Organization not found") {
+      return res.status(404).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
 module.exports = {
   createOrganizationController,
-  getMyOrganizations
+  getMyOrganizations,
+  getOrganizationDetails,
+
 };
