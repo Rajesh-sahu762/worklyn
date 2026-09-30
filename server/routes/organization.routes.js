@@ -4,7 +4,8 @@ const {
     createOrganizationController,
     getMyOrganizations,
     getOrganizationDetails,
-    updateOrganizationController
+    updateOrganizationController,
+    getOrganizationMembersController
 } = require("../controllers/organization.controller");
 
 const router = express.Router();
@@ -12,6 +13,7 @@ const authenticate = require("../middlewares/authenticate");
 const authorizeOrganization = require(
   "../middlewares/authorizeOrganization"
 );
+const { createInvitation } = require("../controllers/organizationInvitation.controller");
 
 
 router.post(
@@ -39,6 +41,22 @@ router.put(
   organizationAccess,
   authorizeOrganization("OWNER", "ADMIN"),
   updateOrganizationController
+);
+
+
+router.get(
+  "/:organizationId/members",
+  authenticate,
+  organizationAccess,
+  getOrganizationMembersController
+);
+
+router.post(
+  "/:organizationId/invitations",
+  authenticate,
+  organizationAccess,
+  authorizeOrganization("OWNER", "ADMIN"),
+  createInvitation
 );
 
 module.exports = router;

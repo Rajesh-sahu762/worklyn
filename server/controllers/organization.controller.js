@@ -3,6 +3,7 @@ const {
   getUserOrganizations,
   getOrganizationById,
   updateOrganization,
+  getOrganizationMembers,
 } = require("../services/organization.service");
 
 const {
@@ -143,9 +144,31 @@ const updateOrganizationController = async (req, res) => {
   }
 };
 
+const getOrganizationMembersController = async (req, res) => {
+  try {
+    const members = await getOrganizationMembers(
+      req.params.organizationId
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        members,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createOrganizationController,
   getMyOrganizations,
   getOrganizationDetails,
   updateOrganizationController,
+  getOrganizationMembersController,
+
 };

@@ -85,9 +85,24 @@ const updateOrganization = async ({
   return organization;
 };
 
+const getOrganizationMembers = async (organizationId) => {
+  const members = await OrganizationMember.find({
+    organization: organizationId,
+    status: "ACTIVE",
+  })
+    .populate({
+      path: "user",
+      select: "firstName lastName email profileImage",
+    })
+    .sort({ createdAt: 1 });
+
+  return members;
+};
+
 module.exports = {
   createOrganization,
   getUserOrganizations,
   getOrganizationById,
   updateOrganization,
+  getOrganizationMembers,
 };
