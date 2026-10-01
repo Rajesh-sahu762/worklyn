@@ -1,38 +1,31 @@
 const express = require("express");
-const organizationAccess = require("../middlewares/organizationAccess")
+const organizationAccess = require("../middlewares/organizationAccess");
 const {
-    createOrganizationController,
-    getMyOrganizations,
-    getOrganizationDetails,
-    updateOrganizationController,
-    getOrganizationMembersController
+  createOrganizationController,
+  getMyOrganizations,
+  getOrganizationDetails,
+  updateOrganizationController,
+  getOrganizationMembersController,
 } = require("../controllers/organization.controller");
 
 const router = express.Router();
 const authenticate = require("../middlewares/authenticate");
-const authorizeOrganization = require(
-  "../middlewares/authorizeOrganization"
-);
-const { createInvitation } = require("../controllers/organizationInvitation.controller");
+const authorizeOrganization = require("../middlewares/authorizeOrganization");
+const {
+  createInvitation,
+  cancelInvitation,
+  resendInvitation,
+} = require("../controllers/organizationInvitation.controller");
 
+router.post("/", authenticate, createOrganizationController);
 
-router.post(
-  "/",
-  authenticate,
-  createOrganizationController
-);
-
-router.get(
-  "/my",
-  authenticate,
-  getMyOrganizations
-);
+router.get("/my", authenticate, getMyOrganizations);
 
 router.get(
   "/:organizationId",
   authenticate,
   organizationAccess,
-  getOrganizationDetails
+  getOrganizationDetails,
 );
 
 router.put(
@@ -40,15 +33,14 @@ router.put(
   authenticate,
   organizationAccess,
   authorizeOrganization("OWNER", "ADMIN"),
-  updateOrganizationController
+  updateOrganizationController,
 );
-
 
 router.get(
   "/:organizationId/members",
   authenticate,
   organizationAccess,
-  getOrganizationMembersController
+  getOrganizationMembersController,
 );
 
 router.post(
@@ -56,7 +48,23 @@ router.post(
   authenticate,
   organizationAccess,
   authorizeOrganization("OWNER", "ADMIN"),
-  createInvitation
+  createInvitation,
+);
+
+router.delete(
+  "/:organizationId/invitations/:invitationId",
+  authenticate,
+  organizationAccess,
+  authorizeOrganization("OWNER", "ADMIN"),
+  cancelInvitation,
+);
+
+router.post(
+  "/:organizationId/invitations/:invitationId/resend",
+  authenticate,
+  organizationAccess,
+  authorizeOrganization("OWNER", "ADMIN"),
+  resendInvitation,
 );
 
 module.exports = router;

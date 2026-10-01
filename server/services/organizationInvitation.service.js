@@ -171,7 +171,85 @@ const acceptOrganizationInvitation = async ({ token, userId }) => {
   };
 };
 
+
+const cancelOrganizationInvitation = async ({
+  organizationId,
+  invitationId,
+}) => {
+  const invitation =
+    await OrganizationInvitation.findOne({
+      _id: invitationId,
+      organization: organizationId,
+    });
+
+  if (!invitation) {
+    throw new Error("Invitation not found");
+  }
+
+  if (invitation.status !== "PENDING") {
+    throw new Error(
+      "Only pending invitations can be cancelled"
+    );
+  }
+
+  invitation.status = "CANCELLED";
+  invitation.cancelledAt = new Date();
+
+  await invitation.save();
+
+  return invitation;
+};
+
+
+const resendOrganizationInvitation = async ({
+  organizationId,
+  invitationId,
+}) => {
+  const invitation =
+    await OrganizationInvitation.findOne({
+      _id: invitationId,
+      organization: organizationId,
+    });
+
+  if (!invitation) {
+    throw new Error("Invitation not found");
+  }
+
+  if (invitation.status !== "PENDING") {
+    throw new Error(
+      "Only pending invitations can be resent"
+    );
+  }
+
+  // Generate a completely new token
+  const inviteToken = generateInviteToken();
+
+  // Hash new token
+  const tokenHash = hashToken(inviteToken);
+
+  // Extend expiry by 7 days
+  const expiresAt = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000
+  );
+
+  invitation.tokenHash = tokenHash;
+  invitation.expiresAt = expiresAt;
+
+  await invitation.save();
+
+  const invitationLink =
+    `${process.env.FRONTEND_URL}/accept-invitation?token=${inviteToken}`;
+
+  return {
+    invitation,
+    invitationLink,
+  };
+};
+
+
 module.exports = {
   createOrganizationInvitation,
   acceptOrganizationInvitation,
+  cancelOrganizationInvitation,
+  resendOrganizationInvitation
 };

@@ -1,5 +1,8 @@
 const {
   createOrganizationInvitation,
+  acceptOrganizationInvitation,
+  cancelOrganizationInvitation,
+  resendOrganizationInvitation
 } = require("../services/organizationInvitation.service");
 
 const {
@@ -65,10 +68,6 @@ const createInvitation = async (req, res) => {
   }
 };
 
-const {
-  acceptOrganizationInvitation,
-} = require("../services/organizationInvitation.service");
-
 const acceptInvitation = async (req, res) => {
   try {
     const { token } = req.body;
@@ -120,7 +119,88 @@ const acceptInvitation = async (req, res) => {
   }
 };
 
+const cancelInvitation = async (req, res) => {
+  try {
+    const invitation =
+      await cancelOrganizationInvitation({
+        organizationId:
+          req.params.organizationId,
+
+        invitationId:
+          req.params.invitationId,
+      });
+
+    return res.status(200).json({
+      success: true,
+      message: "Invitation cancelled successfully",
+      data: {
+        invitation,
+      },
+    });
+  } catch (error) {
+    if (
+      error.message === "Invitation not found" ||
+      error.message ===
+        "Only pending invitations can be cancelled"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+const resendInvitation = async (req, res) => {
+  try {
+    const result =
+      await resendOrganizationInvitation({
+        organizationId:
+          req.params.organizationId,
+
+        invitationId:
+          req.params.invitationId,
+      });
+
+    return res.status(200).json({
+      success: true,
+      message: "Invitation resent successfully",
+      data: {
+        invitation: result.invitation,
+
+        // Development only
+        invitationLink:
+          result.invitationLink,
+      },
+    });
+  } catch (error) {
+    if (
+      error.message === "Invitation not found" ||
+      error.message ===
+        "Only pending invitations can be resent"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createInvitation,
   acceptInvitation,
+  cancelInvitation,
+  resendInvitation,
+  
 };
