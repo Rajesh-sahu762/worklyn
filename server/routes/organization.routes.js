@@ -6,6 +6,7 @@ const {
   getOrganizationDetails,
   updateOrganizationController,
   getOrganizationMembersController,
+  updateMemberRoleController,
 } = require("../controllers/organization.controller");
 
 const router = express.Router();
@@ -66,5 +67,15 @@ router.post(
   authorizeOrganization("OWNER", "ADMIN"),
   resendInvitation,
 );
+
+
+router.patch(
+  "/:organizationId/members/:memberId/role",
+  authenticate,
+  organizationAccess,
+  authorizeOrganization("OWNER"),
+  updateMemberRoleController
+);
+
 
 module.exports = router;

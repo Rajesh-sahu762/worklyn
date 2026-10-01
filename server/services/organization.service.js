@@ -99,10 +99,46 @@ const getOrganizationMembers = async (organizationId) => {
   return members;
 };
 
+
+const updateMemberRole = async ({
+  organizationId,
+  memberId,
+  role,
+}) => {
+  const member = await OrganizationMember.findOne({
+    _id: memberId,
+    organization: organizationId,
+    status: "ACTIVE",
+  });
+
+  if (!member) {
+    throw new Error("Organization member not found");
+  }
+
+  // Owner role cannot be changed from this API
+  if (member.role === "OWNER") {
+    throw new Error(
+      "Organization owner role cannot be changed"
+    );
+  }
+
+  if (!["ADMIN", "MEMBER"].includes(role)) {
+    throw new Error("Invalid organization role");
+  }
+
+  member.role = role;
+
+  await member.save();
+
+  return member;
+};
+
 module.exports = {
   createOrganization,
   getUserOrganizations,
   getOrganizationById,
   updateOrganization,
   getOrganizationMembers,
+  updateMemberRole,
+  
 };

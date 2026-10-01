@@ -45,7 +45,25 @@ const validateUpdateOrganization = ({
   return errors;
 };
 
+const validateUpdateMemberRole = ({ role }) => {
+  const errors = {};
+
+  if (!role) {
+    errors.role = "Role is required";
+  }
+
+  if (
+    role &&
+    !["ADMIN", "MEMBER"].includes(role)
+  ) {
+    errors.role = "Invalid organization role";
+  }
+
+  return errors;
+};
+
 module.exports = {
   validateCreateOrganization,
   validateUpdateOrganization,
+  validateUpdateMemberRole
 };

@@ -4,11 +4,13 @@ const {
   getOrganizationById,
   updateOrganization,
   getOrganizationMembers,
+  updateMemberRole
 } = require("../services/organization.service");
 
 const {
   validateCreateOrganization,
   validateUpdateOrganization,
+  validateUpdateMemberRole,
 } = require("../validators/organization.validator");
 
 const createOrganizationController = async (req, res) => {
@@ -164,11 +166,72 @@ const getOrganizationMembersController = async (req, res) => {
   }
 };
 
+
+const updateMemberRoleController = async (
+  req,
+  res
+) => {
+  try {
+    const errors =
+      validateUpdateMemberRole(req.body);
+
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors,
+      });
+    }
+
+    const member =
+      await updateMemberRole({
+        organizationId:
+          req.params.organizationId,
+
+        memberId:
+          req.params.memberId,
+
+        role: req.body.role,
+      });
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Organization member role updated successfully",
+
+      data: {
+        member,
+      },
+    });
+  } catch (error) {
+    if (
+      error.message ===
+        "Organization member not found" ||
+      error.message ===
+        "Organization owner role cannot be changed" ||
+      error.message ===
+        "Invalid organization role"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
 module.exports = {
   createOrganizationController,
   getMyOrganizations,
   getOrganizationDetails,
   updateOrganizationController,
   getOrganizationMembersController,
+  updateMemberRoleController,
 
 };
