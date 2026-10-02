@@ -9,6 +9,7 @@ const {
   updateMemberRoleController,
   removeOrganizationMemberController,
   leaveOrganizationController,
+  transferOwnershipController,
 } = require("../controllers/organization.controller");
 
 const router = express.Router();
@@ -93,6 +94,14 @@ router.delete(
   authenticate,
   organizationAccess,
   leaveOrganizationController
+);
+
+router.patch(
+  "/:organizationId/transfer-ownership",
+  authenticate,
+  organizationAccess,
+  authorizeOrganization("OWNER"),
+  transferOwnershipController
 );
 
 module.exports = router;

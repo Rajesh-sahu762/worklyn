@@ -193,6 +193,105 @@ const leaveOrganization = async ({
   return membership;
 };
 
+const mongoose = require("mongoose");
+
+const transferOrganizationOwnership = async ({
+  organizationId,
+  currentOwnerId,
+  newOwnerMemberId,
+}) => {
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    // 1. Find current owner membership
+    const currentOwner =
+      await OrganizationMember.findOne({
+        organization: organizationId,
+        user: currentOwnerId,
+        role: "OWNER",
+        status: "ACTIVE",
+      }).session(session);
+
+    if (!currentOwner) {
+      throw new Error(
+        "You are not the owner of this organization"
+      );
+    }
+
+    // 2. Find target member
+    const newOwner =
+      await OrganizationMember.findOne({
+        _id: newOwnerMemberId,
+        organization: organizationId,
+        status: "ACTIVE",
+      }).session(session);
+
+    if (!newOwner) {
+      throw new Error(
+        "Target member not found"
+      );
+    }
+
+    // 3. Cannot transfer ownership to yourself
+    if (
+      currentOwner._id.toString() ===
+      newOwner._id.toString()
+    ) {
+      throw new Error(
+        "You are already the owner of this organization"
+      );
+    }
+
+    // 4. Update organization owner
+    const organization =
+      await Organization.findByIdAndUpdate(
+        organizationId,
+        {
+          owner: newOwner.user,
+        },
+        {
+          new: true,
+          session,
+        }
+      );
+
+    if (!organization) {
+      throw new Error("Organization not found");
+    }
+
+    // 5. Old owner becomes ADMIN
+    currentOwner.role = "ADMIN";
+
+    await currentOwner.save({
+      session,
+    });
+
+    // 6. Target becomes OWNER
+    newOwner.role = "OWNER";
+
+    await newOwner.save({
+      session,
+    });
+
+    // 7. Commit transaction
+    await session.commitTransaction();
+
+    return {
+      organization,
+      previousOwner: currentOwner,
+      newOwner,
+    };
+  } catch (error) {
+    await session.abortTransaction();
+
+    throw error;
+  } finally {
+    await session.endSession();
+  }
+};
+
 
 module.exports = {
   createOrganization,
@@ -202,5 +301,6 @@ module.exports = {
   getOrganizationMembers,
   updateMemberRole,
   removeOrganizationMember,
-  leaveOrganization
+  leaveOrganization,
+  transferOrganizationOwnership
 };

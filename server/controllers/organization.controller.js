@@ -6,7 +6,8 @@ const {
   getOrganizationMembers,
   updateMemberRole,
   removeOrganizationMember,
-  leaveOrganization
+  leaveOrganization,
+  transferOrganizationOwnership
 } = require("../services/organization.service");
 
 const {
@@ -307,6 +308,67 @@ const leaveOrganizationController = async (
   }
 };
 
+const transferOwnershipController = async (
+  req,
+  res
+) => {
+  try {
+    const {
+      newOwnerMemberId,
+    } = req.body;
+
+    if (!newOwnerMemberId) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "New owner member ID is required",
+      });
+    }
+
+    const result =
+      await transferOrganizationOwnership({
+        organizationId:
+          req.params.organizationId,
+
+        currentOwnerId:
+          req.user._id,
+
+        newOwnerMemberId,
+      });
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Organization ownership transferred successfully",
+
+      data: {
+        organization: result.organization,
+        previousOwner: result.previousOwner,
+        newOwner: result.newOwner,
+      },
+    });
+  } catch (error) {
+    const clientErrors = [
+      "You are not the owner of this organization",
+      "Target member not found",
+      "You are already the owner of this organization",
+      "Organization not found",
+    ];
+
+    if (clientErrors.includes(error.message)) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createOrganizationController,
   getMyOrganizations,
@@ -315,5 +377,6 @@ module.exports = {
   getOrganizationMembersController,
   updateMemberRoleController,
   removeOrganizationMemberController,
-  leaveOrganizationController
+  leaveOrganizationController,
+  transferOwnershipController
 };
