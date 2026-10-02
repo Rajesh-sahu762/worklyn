@@ -162,7 +162,36 @@ const removeOrganizationMember = async ({
   return member;
 };
 
+const leaveOrganization = async ({
+  organizationId,
+  userId,
+}) => {
+  const membership = await OrganizationMember.findOne({
+    organization: organizationId,
+    user: userId,
+    status: "ACTIVE",
+  });
 
+  if (!membership) {
+    throw new Error(
+      "You are not an active member of this organization"
+    );
+  }
+
+  // Owner cannot leave directly
+  if (membership.role === "OWNER") {
+    throw new Error(
+      "Organization owner cannot leave. Transfer ownership first."
+    );
+  }
+
+  // Soft remove membership
+  membership.status = "REMOVED";
+
+  await membership.save();
+
+  return membership;
+};
 
 
 module.exports = {
@@ -172,5 +201,6 @@ module.exports = {
   updateOrganization,
   getOrganizationMembers,
   updateMemberRole,
-  removeOrganizationMember
+  removeOrganizationMember,
+  leaveOrganization
 };

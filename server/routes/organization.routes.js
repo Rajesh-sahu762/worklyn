@@ -8,6 +8,7 @@ const {
   getOrganizationMembersController,
   updateMemberRoleController,
   removeOrganizationMemberController,
+  leaveOrganizationController,
 } = require("../controllers/organization.controller");
 
 const router = express.Router();
@@ -87,5 +88,11 @@ router.delete(
   removeOrganizationMemberController
 );
 
+router.delete(
+  "/:organizationId/leave",
+  authenticate,
+  organizationAccess,
+  leaveOrganizationController
+);
 
 module.exports = router;

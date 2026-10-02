@@ -5,7 +5,8 @@ const {
   updateOrganization,
   getOrganizationMembers,
   updateMemberRole,
-  removeOrganizationMember
+  removeOrganizationMember,
+  leaveOrganization
 } = require("../services/organization.service");
 
 const {
@@ -269,6 +270,42 @@ const removeOrganizationMemberController = async (
   }
 };
 
+const leaveOrganizationController = async (
+  req,
+  res
+) => {
+  try {
+    await leaveOrganization({
+      organizationId:
+        req.params.organizationId,
+
+      userId: req.user._id,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "You have left the organization successfully",
+    });
+  } catch (error) {
+    if (
+      error.message ===
+        "You are not an active member of this organization" ||
+      error.message ===
+        "Organization owner cannot leave. Transfer ownership first."
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 module.exports = {
   createOrganizationController,
@@ -277,5 +314,6 @@ module.exports = {
   updateOrganizationController,
   getOrganizationMembersController,
   updateMemberRoleController,
-  removeOrganizationMemberController
+  removeOrganizationMemberController,
+  leaveOrganizationController
 };
