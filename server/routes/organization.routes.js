@@ -7,6 +7,7 @@ const {
   updateOrganizationController,
   getOrganizationMembersController,
   updateMemberRoleController,
+  removeOrganizationMemberController,
 } = require("../controllers/organization.controller");
 
 const router = express.Router();
@@ -75,6 +76,15 @@ router.patch(
   organizationAccess,
   authorizeOrganization("OWNER"),
   updateMemberRoleController
+);
+
+
+router.delete(
+  "/:organizationId/members/:memberId",
+  authenticate,
+  organizationAccess,
+  authorizeOrganization("OWNER"),
+  removeOrganizationMemberController
 );
 
 

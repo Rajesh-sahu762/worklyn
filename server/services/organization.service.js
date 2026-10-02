@@ -133,6 +133,38 @@ const updateMemberRole = async ({
   return member;
 };
 
+const removeOrganizationMember = async ({
+  organizationId,
+  memberId,
+}) => {
+  const member = await OrganizationMember.findOne({
+    _id: memberId,
+    organization: organizationId,
+    status: "ACTIVE",
+  });
+
+  if (!member) {
+    throw new Error("Organization member not found");
+  }
+
+  // Owner cannot be removed
+  if (member.role === "OWNER") {
+    throw new Error(
+      "Organization owner cannot be removed"
+    );
+  }
+
+  // Soft remove instead of deleting the document
+  member.status = "REMOVED";
+
+  await member.save();
+
+  return member;
+};
+
+
+
+
 module.exports = {
   createOrganization,
   getUserOrganizations,
@@ -140,5 +172,5 @@ module.exports = {
   updateOrganization,
   getOrganizationMembers,
   updateMemberRole,
-  
+  removeOrganizationMember
 };
