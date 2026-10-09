@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const Project = require("../models/Project");
 const ProjectMember = require("../models/ProjectMember");
-
+const OrganizationMember = require("../models/OrganizationMember");
 const createProject = async ({
   organizationId,
   name,
@@ -25,9 +25,7 @@ const createProject = async ({
     }).session(session);
 
     if (existingKey) {
-      throw new Error(
-        "Project key already exists in this organization"
-      );
+      throw new Error("Project key already exists in this organization");
     }
 
     // 2. Check duplicate project slug
@@ -37,9 +35,7 @@ const createProject = async ({
     }).session(session);
 
     if (existingSlug) {
-      throw new Error(
-        "Project slug already exists in this organization"
-      );
+      throw new Error("Project slug already exists in this organization");
     }
 
     // 3. Create project
@@ -54,11 +50,9 @@ const createProject = async ({
 
           slug: slug.toLowerCase().trim(),
 
-          description:
-            description?.trim() || "",
+          description: description?.trim() || "",
 
-          projectType:
-            projectType || "SCRUM",
+          projectType: projectType || "SCRUM",
 
           lead: lead || createdBy,
 
@@ -67,7 +61,7 @@ const createProject = async ({
           status: "ACTIVE",
         },
       ],
-      { session }
+      { session },
     );
 
     const createdProject = project[0];
@@ -87,7 +81,7 @@ const createProject = async ({
           joinedAt: new Date(),
         },
       ],
-      { session }
+      { session },
     );
 
     // 5. Commit
@@ -103,6 +97,97 @@ const createProject = async ({
   }
 };
 
+const getUserProjects = async (userId, organizationId) => {
+  const memberships = await ProjectMember.find({
+    user: userId,
+    status: "ACTIVE",
+  })
+    .populate({
+      path: "project",
+      match: {
+        organization: organizationId,
+        status: "ACTIVE",
+      },
+    })
+    .sort({ createdAt: -1 });
+
+  return memberships
+    .filter((membership) => membership.project)
+    .map((membership) => ({
+      project: membership.project,
+      role: membership.role,
+      membershipId: membership._id,
+    }));
+};
+
+const getProjectById = async (projectId) => {
+  const project = await Project.findById(projectId).select("-__v");
+
+  if (!project) {
+    throw new Error("Project not found");
+  }
+
+  return project;
+};
+
+const addProjectMember = async ({ projectId, userId, role }) => {
+  const project = await Project.findOne({
+    _id: projectId,
+    status: "ACTIVE",
+  });
+
+  if (!project) {
+    throw new Error("Project not found");
+  }
+
+  const organizationMembership = await OrganizationMember.findOne({
+    organization: project.organization,
+    user: userId,
+    status: "ACTIVE",
+  });
+
+  if (!organizationMembership) {
+    throw new Error("User is not an active member of this organization");
+  }
+
+  if (!["MEMBER", "VIEWER"].includes(role)) {
+    throw new Error("Invalid project role");
+  }
+
+  let membership = await ProjectMember.findOne({
+    project: projectId,
+    user: userId,
+  });
+
+  if (membership?.status === "ACTIVE") {
+    throw new Error("User is already a member of this project");
+  }
+
+  if (membership) {
+    membership.role = role;
+    membership.status = "ACTIVE";
+    membership.invitedBy = null;
+    membership.joinedAt = new Date();
+
+    await membership.save();
+    return membership;
+  }
+
+  membership = await ProjectMember.create({
+    project: projectId,
+    user: userId,
+    role,
+    status: "ACTIVE",
+    invitedBy: null,
+    joinedAt: new Date(),
+  });
+
+  return membership;
+};
+
 module.exports = {
   createProject,
+  getUserProjects,
+  getProjectById,
+  addProjectMember,
 };
