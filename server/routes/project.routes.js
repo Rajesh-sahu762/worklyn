@@ -11,6 +11,8 @@ const {
   getProjectDetailsController,
   addProjectMemberController,
   createProjectController,
+  updateProjectMemberRoleController,
+  removeProjectMemberController
 } = require("../controllers/project.controller");
 
 router.post(
@@ -44,6 +46,22 @@ router.post(
   projectAccess,
   authorizeProject("PROJECT_ADMIN"),
   addProjectMemberController
+);
+
+router.patch(
+  "/projects/:projectId/members/:memberId/role",
+  authenticate,
+  projectAccess,
+  authorizeProject("PROJECT_ADMIN"),
+  updateProjectMemberRoleController
+);
+
+router.delete(
+  "/projects/:projectId/members/:memberId",
+  authenticate,
+  projectAccess,
+  authorizeProject("PROJECT_ADMIN"),
+  removeProjectMemberController
 );
 
 

@@ -185,9 +185,73 @@ const addProjectMember = async ({ projectId, userId, role }) => {
   return membership;
 };
 
+const updateProjectMemberRole = async ({
+  projectId,
+  memberId,
+  role,
+}) => {
+  if (!["MEMBER", "VIEWER"].includes(role)) {
+    throw new Error("Invalid project role");
+  }
+
+  const membership = await ProjectMember.findOne({
+    _id: memberId,
+    project: projectId,
+    status: "ACTIVE",
+  });
+
+  if (!membership) {
+    throw new Error("Project member not found");
+  }
+
+  membership.role = role;
+  await membership.save();
+
+  return membership;
+};
+
+const removeProjectMember = async ({
+  projectId,
+  memberId,
+  currentUserId,
+}) => {
+  const membership = await ProjectMember.findOne({
+    _id: memberId,
+    project: projectId,
+    status: "ACTIVE",
+  });
+
+  if (!membership) {
+    throw new Error("Project member not found");
+  }
+
+  // Do not allow removing the last active project admin
+  if (membership.role === "PROJECT_ADMIN") {
+    const activeAdmins = await ProjectMember.countDocuments({
+      project: projectId,
+      role: "PROJECT_ADMIN",
+      status: "ACTIVE",
+    });
+
+    if (activeAdmins <= 1) {
+      throw new Error(
+        "Cannot remove the last project admin"
+      );
+    }
+  }
+
+  membership.status = "REMOVED";
+  await membership.save();
+
+  return membership;
+};
+
+
 module.exports = {
   createProject,
   getUserProjects,
   getProjectById,
   addProjectMember,
+  updateProjectMemberRole,
+  removeProjectMember
 };

@@ -2,7 +2,9 @@ const {
   createProject,
   getProjectById,
   getUserProjects,
-  addProjectMember
+  addProjectMember,
+  updateProjectMemberRole,
+  removeProjectMember
 } = require("../services/project.service");
 
 const { validateCreateProject } = require("../validators/project.validator");
@@ -158,9 +160,89 @@ const addProjectMemberController = async (req, res) => {
   }
 };
 
+const updateProjectMemberRoleController = async (
+  req,
+  res
+) => {
+  try {
+    const { role } = req.body;
+
+    if (!role) {
+      return res.status(400).json({
+        success: false,
+        message: "Role is required",
+      });
+    }
+
+    const membership = await updateProjectMemberRole({
+      projectId: req.project._id,
+      memberId: req.params.memberId,
+      role,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Project member role updated successfully",
+      data: { membership },
+    });
+  } catch (error) {
+    const clientErrors = [
+      "Invalid project role",
+      "Project member not found",
+    ];
+
+    if (clientErrors.includes(error.message)) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update project member role",
+    });
+  }
+};
+
+const removeProjectMemberController = async (req, res) => {
+  try {
+    const membership = await removeProjectMember({
+      projectId: req.project._id,
+      memberId: req.params.memberId,
+      currentUserId: req.user._id,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Project member removed successfully",
+      data: { membership },
+    });
+  } catch (error) {
+    const clientErrors = [
+      "Project member not found",
+      "Cannot remove the last project admin",
+    ];
+
+    if (clientErrors.includes(error.message)) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to remove project member",
+    });
+  }
+};
+
 module.exports = {
   createProjectController,
   getProjectDetailsController,
   getMyProjectsController,
   addProjectMemberController,
+  updateProjectMemberRoleController,
+  removeProjectMemberController
 };
