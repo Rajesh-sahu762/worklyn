@@ -75,21 +75,20 @@ const projectSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    issueCounter: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Project key should be unique inside an organization
-projectSchema.index(
-  { organization: 1, key: 1 },
-  { unique: true }
-);
+projectSchema.index({ organization: 1, key: 1 }, { unique: true });
 
-projectSchema.index(
-  { organization: 1, slug: 1 },
-  { unique: true }
-);
+projectSchema.index({ organization: 1, slug: 1 }, { unique: true });
 
 module.exports = mongoose.model("Project", projectSchema);
