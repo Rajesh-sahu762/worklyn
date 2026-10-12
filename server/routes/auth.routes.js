@@ -27,7 +27,6 @@ router.post("/verify-email", verifyEmailController);
 
 router.post("/resend-verification", resendVerificationOtpController);
 
-// router.get("/me", getCurrentUser);
 
 
 module.exports = router;
