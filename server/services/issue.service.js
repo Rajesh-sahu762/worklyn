@@ -244,8 +244,115 @@ const getIssueById = async ({ issueId, userId }) => {
   return issue;
 };
 
+const updateIssue = async ({
+  issueId,
+  projectId,
+  userId,
+  userRole,
+  updates,
+}) => {
+  const allowedFields = [
+    "title",
+    "description",
+    "status",
+    "priority",
+    "type",
+    "assignee",
+    "labels",
+    "dueDate",
+    "estimate",
+  ];
+
+  if (userRole === "VIEWER") {
+    const error = new Error("Viewers cannot update issues");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const issue = await Issue.findOne({
+    _id: issueId,
+    project: projectId,
+    archivedAt: null,
+  });
+
+  if (!issue) {
+    const error = new Error("Issue not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const fields = Object.keys(updates);
+
+  if (
+    fields.length === 0 ||
+    fields.some((field) => !allowedFields.includes(field))
+  ) {
+    const error = new Error("Invalid or empty update fields");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (updates.assignee !== undefined) {
+    if (updates.assignee === null || updates.assignee === "") {
+      issue.assignee = null;
+    } else {
+      if (!mongoose.isValidObjectId(updates.assignee)) {
+        const error = new Error("Invalid assignee ID");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      const membership = await ProjectMember.findOne({
+        project: projectId,
+        user: updates.assignee,
+        status: "ACTIVE",
+      });
+
+      if (!membership) {
+        const error = new Error(
+          "Assignee must be an active project member"
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+
+      const organizationMembership =
+        await OrganizationMember.findOne({
+          organization: issue.organization,
+          user: updates.assignee,
+          status: "ACTIVE",
+        });
+
+      if (!organizationMembership) {
+        const error = new Error(
+          "Assignee is not an active organization member"
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+
+      issue.assignee = updates.assignee;
+    }
+  }
+
+  for (const field of fields) {
+    if (field !== "assignee") {
+      issue[field] = updates[field];
+    }
+  }
+
+  await issue.save();
+
+  return Issue.findById(issue._id)
+    .populate("reporter", "firstName lastName email")
+    .populate("assignee", "firstName lastName email profileImage")
+    .populate("parentIssue", "issueKey title type status")
+    .lean();
+};
+
 module.exports = {
   createIssue,
   getProjectIssues,
   getIssueById,
+  updateIssue
 };

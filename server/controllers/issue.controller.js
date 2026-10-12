@@ -1,6 +1,11 @@
 const { validateCreateIssue } = require("../validators/issue.validator");
-const { createIssue, getIssueById, getProjectIssues } = require("../services/issue.service");
+const { updateIssue, createIssue, getIssueById, getProjectIssues } = require("../services/issue.service");
 const { validateGetIssues } = require("../validators/getIssues.validator");
+
+const {
+  validateUpdateIssue,
+} = require("../validators/updateIssue.validator");
+
 
 const createIssueController = async (req, res) => {
   try {
@@ -132,8 +137,52 @@ const getIssueByIdController = async (req, res) => {
   }
 };
 
+
+const updateIssueController = async (req, res) => {
+  try {
+    const validation = validateUpdateIssue(req.body);
+
+    if (validation.error) {
+      return res.status(400).json({
+        success: false,
+        message: validation.error,
+      });
+    }
+
+    const issue = await updateIssue({
+      issueId: req.params.issueId,
+      projectId: req.project._id,
+      userId: req.user._id,
+      userRole: req.projectMembership.role,
+      updates: validation.data,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Issue updated successfully",
+      data: issue,
+    });
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    console.error("Update issue error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update issue",
+    });
+  }
+};
+
+
 module.exports = {
   createIssueController,
   getProjectIssuesController,
   getIssueByIdController,
+  updateIssueController,
 };

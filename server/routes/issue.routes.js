@@ -8,6 +8,7 @@ const {
   createIssueController,
   getProjectIssuesController,
   getIssueByIdController,
+  updateIssueController,
 } = require("../controllers/issue.controller");
 
 router.post(
@@ -28,6 +29,13 @@ router.get(
   "/issues/:issueId",
   authenticate,
   getIssueByIdController
+);
+
+router.patch(
+  "/projects/:projectId/issues/:issueId",
+  authenticate,
+  projectAccess,
+  updateIssueController
 );
 
 module.exports = router;
