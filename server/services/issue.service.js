@@ -244,6 +244,14 @@ const getIssueById = async ({ issueId, userId }) => {
   return issue;
 };
 
+const STATUS_TRANSITIONS = {
+  BACKLOG: ["TODO"],
+  TODO: ["BACKLOG", "IN_PROGRESS"],
+  IN_PROGRESS: ["TODO", "IN_REVIEW"],
+  IN_REVIEW: ["IN_PROGRESS", "DONE"],
+  DONE: ["IN_REVIEW"],
+};
+
 const updateIssue = async ({
   issueId,
   projectId,
@@ -263,12 +271,26 @@ const updateIssue = async ({
     "estimate",
   ];
 
+  // 1. Permission check
   if (userRole === "VIEWER") {
     const error = new Error("Viewers cannot update issues");
     error.statusCode = 403;
     throw error;
   }
 
+  // 2. Validate requested fields
+  const fields = Object.keys(updates);
+
+  if (
+    fields.length === 0 ||
+    fields.some((field) => !allowedFields.includes(field))
+  ) {
+    const error = new Error("Invalid or empty update fields");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // 3. Find issue inside the authorized project
   const issue = await Issue.findOne({
     _id: issueId,
     project: projectId,
@@ -281,21 +303,23 @@ const updateIssue = async ({
     throw error;
   }
 
-  const fields = Object.keys(updates);
-
+  // 4. Validate status transition
   if (
-    fields.length === 0 ||
-    fields.some((field) => !allowedFields.includes(field))
+    updates.status !== undefined &&
+    updates.status !== issue.status &&
+    !STATUS_TRANSITIONS[issue.status]?.includes(updates.status)
   ) {
-    const error = new Error("Invalid or empty update fields");
+    const error = new Error(
+      `Cannot change status from ${issue.status} to ${updates.status}`
+    );
+
     error.statusCode = 400;
     throw error;
   }
 
+  // 5. Validate assignee without modifying the issue yet
   if (updates.assignee !== undefined) {
-    if (updates.assignee === null || updates.assignee === "") {
-      issue.assignee = null;
-    } else {
+    if (updates.assignee !== null && updates.assignee !== "") {
       if (!mongoose.isValidObjectId(updates.assignee)) {
         const error = new Error("Invalid assignee ID");
         error.statusCode = 400;
@@ -330,19 +354,94 @@ const updateIssue = async ({
         error.statusCode = 400;
         throw error;
       }
-
-      issue.assignee = updates.assignee;
     }
   }
 
-  for (const field of fields) {
-    if (field !== "assignee") {
-      issue[field] = updates[field];
+  // 6. Normalize values for accurate activity comparison
+  const normalize = (value) => {
+    if (value === null || value === undefined) {
+      return null;
     }
+
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+
+    if (Array.isArray(value)) {
+      return value.map(normalize);
+    }
+
+    if (typeof value === "object" && value.toHexString) {
+      return value.toHexString();
+    }
+
+    return value;
+  };
+
+  const changes = [];
+
+  // Capture old values BEFORE modifying the issue
+  for (const field of fields) {
+    let newValue = updates[field];
+
+    if (field === "assignee" && (newValue === "" || newValue === null)) {
+      newValue = null;
+    }
+
+    if (field === "dueDate" && newValue !== null) {
+      newValue = new Date(newValue);
+    }
+
+    const oldValue = issue[field];
+
+    if (
+      JSON.stringify(normalize(oldValue)) !==
+      JSON.stringify(normalize(newValue))
+    ) {
+      changes.push({
+        field,
+        from: normalize(oldValue),
+        to: normalize(newValue),
+      });
+    }
+  }
+
+  // 7. Apply changes only after capturing history
+  for (const field of fields) {
+    let value = updates[field];
+
+    if (field === "assignee" && (value === "" || value === null)) {
+      value = null;
+    }
+
+    if (field === "dueDate" && value !== null) {
+      value = new Date(value);
+    }
+
+    issue[field] = value;
   }
 
   await issue.save();
 
+  // 8. Record activity only when something actually changed
+  if (changes.length > 0) {
+    const IssueActivity = require("../models/IssueActivity");
+
+    await IssueActivity.create({
+      organization: issue.organization,
+      project: issue.project,
+      issue: issue._id,
+      actor: userId,
+      action: changes.some(
+        (change) => change.field === "status"
+      )
+        ? "STATUS_CHANGED"
+        : "ISSUE_UPDATED",
+      changes,
+    });
+  }
+
+  // 9. Return populated issue
   return Issue.findById(issue._id)
     .populate("reporter", "firstName lastName email")
     .populate("assignee", "firstName lastName email profileImage")
@@ -354,5 +453,5 @@ module.exports = {
   createIssue,
   getProjectIssues,
   getIssueById,
-  updateIssue
+  updateIssue,
 };
