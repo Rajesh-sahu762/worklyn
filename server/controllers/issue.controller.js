@@ -1,10 +1,6 @@
-const {
-  createIssue,
-} = require("../services/issue.service");
-
-const {
-  validateCreateIssue,
-} = require("../validators/issue.validator");
+const { validateCreateIssue } = require("../validators/issue.validator");
+const { createIssue, getIssueById, getProjectIssues } = require("../services/issue.service");
+const { validateGetIssues } = require("../validators/getIssues.validator");
 
 const createIssueController = async (req, res) => {
   try {
@@ -74,13 +70,6 @@ const createIssueController = async (req, res) => {
 };
 
 
-const {
-  getProjectIssues,
-} = require("../services/issue.service");
-
-const {
-  validateGetIssues,
-} = require("../validators/getIssues.validator");
 
 const getProjectIssuesController = async (req, res) => {
   try {
@@ -114,8 +103,37 @@ const getProjectIssuesController = async (req, res) => {
   }
 };
 
+const getIssueByIdController = async (req, res) => {
+  try {
+    const issue = await getIssueById({
+      issueId: req.params.issueId,
+      userId: req.user._id,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Issue fetched successfully",
+      data: issue,
+    });
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    console.error("Get issue error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch issue",
+    });
+  }
+};
 
 module.exports = {
   createIssueController,
   getProjectIssuesController,
+  getIssueByIdController,
 };

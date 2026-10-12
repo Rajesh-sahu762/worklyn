@@ -198,8 +198,54 @@ const getProjectIssues = async ({
   };
 };
 
+const getIssueById = async ({ issueId, userId }) => {
+  if (!mongoose.isValidObjectId(issueId)) {
+    const error = new Error("Invalid issue ID");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const issue = await Issue.findOne({
+    _id: issueId,
+    archivedAt: null,
+  })
+    .populate("reporter", "firstName lastName email profileImage")
+    .populate("assignee", "firstName lastName email profileImage")
+    .populate("parentIssue", "issueKey title type status")
+    .lean();
+
+  if (!issue) {
+    const error = new Error("Issue not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const [projectMembership, organizationMembership] =
+    await Promise.all([
+      ProjectMember.findOne({
+        project: issue.project,
+        user: userId,
+        status: "ACTIVE",
+      }).lean(),
+
+      OrganizationMember.findOne({
+        organization: issue.organization,
+        user: userId,
+        status: "ACTIVE",
+      }).lean(),
+    ]);
+
+  if (!projectMembership || !organizationMembership) {
+    const error = new Error("You do not have access to this issue");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  return issue;
+};
 
 module.exports = {
   createIssue,
   getProjectIssues,
+  getIssueById,
 };

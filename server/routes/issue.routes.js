@@ -7,6 +7,7 @@ const projectAccess = require("../middlewares/projectAccess");
 const {
   createIssueController,
   getProjectIssuesController,
+  getIssueByIdController,
 } = require("../controllers/issue.controller");
 
 router.post(
@@ -21,6 +22,12 @@ router.get(
   authenticate,
   projectAccess,
   getProjectIssuesController
+);
+
+router.get(
+  "/issues/:issueId",
+  authenticate,
+  getIssueByIdController
 );
 
 module.exports = router;
