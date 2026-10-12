@@ -125,6 +125,81 @@ const createIssue = async ({
   return issue;
 };
 
+const getProjectIssues = async ({
+  projectId,
+  page = 1,
+  limit = 10,
+  status,
+  type,
+  priority,
+  assignee,
+  search,
+}) => {
+  const filter = {
+    project: projectId,
+    archivedAt: null,
+  };
+
+  // Allowlisted filters only
+  if (status) filter.status = status;
+  if (type) filter.type = type;
+  if (priority) filter.priority = priority;
+
+  if (assignee === "unassigned") {
+    filter.assignee = null;
+  } else if (assignee) {
+    if (!mongoose.isValidObjectId(assignee)) {
+      throw new Error("Invalid assignee ID");
+    }
+
+    filter.assignee = assignee;
+  }
+
+  // Search by title or issue key
+  if (search) {
+    const escapedSearch = search.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      "\\$&"
+    );
+
+    const searchRegex = new RegExp(escapedSearch, "i");
+
+    filter.$or = [
+      { title: searchRegex },
+      { issueKey: searchRegex },
+    ];
+  }
+
+  const skip = (page - 1) * limit;
+
+  const [issues, total] = await Promise.all([
+    Issue.find(filter)
+      .populate("reporter", "firstName lastName email")
+      .populate("assignee", "firstName lastName email profileImage")
+      .populate("parentIssue", "issueKey title")
+      .sort({ updatedAt: -1, _id: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+
+    Issue.countDocuments(filter),
+  ]);
+
+  return {
+    issues,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page * limit < total,
+      hasPrevPage: page > 1,
+    },
+  };
+};
+
+
 module.exports = {
   createIssue,
+  getProjectIssues,
 };
