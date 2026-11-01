@@ -1,6 +1,7 @@
 import { useId, useRef, useState } from "react";
 import { login, resendVerification } from "../lib/api";
-
+import { Link } from "react-router";
+import { useAuth } from "../context/AuthContext";
 // Real status enum + the forward path allowed by the backend transitions.
 const FLOW = [
   { label: "Backlog", dot: "bg-status-backlog" },
@@ -11,7 +12,7 @@ const FLOW = [
 ];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
+ 
 function Field({ id, label, error, children }) {
   return (
     <div className="space-y-1.5">
@@ -39,7 +40,8 @@ const inputClass = (hasError) =>
  *  onLoggedIn(user, accessToken)  – called after a successful login
  *  onCreateAccount()              – navigate to registration (no router yet)
  */
-export default function LoginPage({ onLoggedIn, onCreateAccount }) {
+export default function LoginPage() {
+  const { login: setSession } = useAuth();
   const uid = useId();
   const emailId = `${uid}-email`;
   const passwordId = `${uid}-password`;
@@ -80,7 +82,7 @@ export default function LoginPage({ onLoggedIn, onCreateAccount }) {
     setPending(true);
     try {
       const { user, accessToken } = await login(email.trim().toLowerCase(), password);
-      onLoggedIn?.(user, accessToken);
+      setSession(user, accessToken); // PublicOnlyRoute redirects once the status flips
     } catch (err) {
       // Keep what the user typed; only surface the problem.
       setFieldErrors(err.fieldErrors || {});
@@ -255,13 +257,12 @@ export default function LoginPage({ onLoggedIn, onCreateAccount }) {
 
           <p className="mt-8 text-sm text-ink-muted">
             New to Worklyn?{" "}
-            <button
-              type="button"
-              onClick={onCreateAccount}
-              className="font-medium text-accent-support underline underline-offset-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-support"
-            >
-              Create an account
-            </button>
+          <Link
+  to="/register"
+  className="font-medium text-accent-support underline underline-offset-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-support"
+>
+  Create an account
+</Link>
           </p>
         </div>
       </main>

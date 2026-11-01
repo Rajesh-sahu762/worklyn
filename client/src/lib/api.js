@@ -79,5 +79,13 @@ export const refresh = () =>
 export const getMe = (token) =>
   request("/auth/me", { token }).then((r) => r.data);
 
+// GET /api/organization/my -> { data: { organizations: [...] } }
+export const getMyOrganizations = (token) =>
+  request("/organization/my", { token }).then((r) => r.data.organizations ?? []);
+
+// GET /api/organizations/:orgId/projects/my -> { data: { projects: [...] } }
+export const getMyProjects = (orgId, token) =>
+  request(`/organizations/${orgId}/projects/my`, { token }).then((r) => r.data.projects ?? []);
+
 // POST /api/auth/logout (cookie, no bearer needed)
 export const logout = () => request("/auth/logout", { method: "POST" });
