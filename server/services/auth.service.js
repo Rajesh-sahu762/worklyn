@@ -227,7 +227,7 @@ const refreshAccessToken = async ({
   try {
     decoded = jwt.verify(
       refreshToken,
-      process.env.JWT_REFRESH_SECRET
+      process.env.JWT_REFRESH_TOKEN
     );
   } catch (error) {
     throw new Error("Invalid or expired refresh token");

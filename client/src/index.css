@@ -1,1 +1,33 @@
 @import "tailwindcss";
+
+/* Worklyn "Workshop Signal" tokens (Tailwind v4 @theme) */
+@theme {
+  --color-canvas: #f4f5f2;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #eaeee9;
+  --color-ink: #17231d;
+  --color-ink-muted: #59665f;
+  --color-ink-faint: #748078;
+  --color-line: #d8ded8;
+  --color-accent: #b8f04a;
+  --color-accent-strong: #8fca24;
+  --color-accent-support: #316b59;
+  --color-danger: #b33c3c;
+
+  --color-status-backlog: #6e7880;
+  --color-status-todo: #316b9a;
+  --color-status-progress: #8a5a00;
+  --color-status-review: #8053a6;
+  --color-status-done: #26734d;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --radius-control: 6px;
+  --radius-panel: 10px;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}

@@ -264,11 +264,13 @@ const refresh = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(401).json({
-      success: false,
-      message: error.message,
-    });
-  }
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  });
+  return res.status(401).json({ success: false, message: error.message });
+}
 };
 
 const logout = async (req,res) => {

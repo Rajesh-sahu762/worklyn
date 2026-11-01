@@ -8,7 +8,7 @@ const generateAccessToken = (userId) => {
     process.env.JWT_ACCESS_SECRET,
     {
       expiresIn: "15m",
-    }
+    },
   );
 };
 
@@ -20,7 +20,11 @@ const generateRefreshToken = (userId) => {
     process.env.JWT_REFRESH_TOKEN,
     {
       expiresIn: "7d",
-    }
+      // Unique id per token. Without it, two tokens created in the same second
+      // for the same user are identical, and the unique tokenHash index would
+      // reject the rotated one.
+      jwtid: crypto.randomUUID(),
+    },
   );
 };
 
