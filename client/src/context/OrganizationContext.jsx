@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { getMyOrganizations, getMyProjects } from "../lib/api";
 
@@ -27,9 +27,7 @@ const normalizeProject = (item) => {
 };
 
 export function OrganizationProvider({ children }) {
-  const { user, accessToken } = useAuth();
-  const tokenRef = useRef(accessToken);
-  useEffect(() => { tokenRef.current = accessToken; }, [accessToken]);
+  const { user } = useAuth();
   const userKey = idOf(user) ?? user?.email ?? null;
 
   const [orgs, setOrgs] = useState([]);
@@ -39,7 +37,7 @@ export function OrganizationProvider({ children }) {
 
   useEffect(() => {
     let cancelled = false;
-    getMyOrganizations(tokenRef.current)
+    getMyOrganizations()
       .then((list) => {
         if (cancelled) return;
         setOrgs(list.map(normalizeOrg).filter((o) => o.id));
@@ -61,7 +59,7 @@ export function OrganizationProvider({ children }) {
   useEffect(() => {
     if (!currentId) return;
     let cancelled = false;
-    getMyProjects(currentId, tokenRef.current)
+    getMyProjects(currentId)
       .then((list) => {
         if (!cancelled) setProjState({ orgId: currentId, items: list.map(normalizeProject).filter((p) => p.id), error: "" });
       })

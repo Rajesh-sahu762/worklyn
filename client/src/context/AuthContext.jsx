@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { getMe, logout as apiLogout, refresh } from "../lib/api";
+import { configureApi, getMe, logout as apiLogout, refresh, setAccessToken } from "../lib/api";
 
 const AuthContext = createContext(null);
 
@@ -25,16 +25,30 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null); // { user, accessToken }
   const [status, setStatus] = useState("loading"); // loading | authenticated | unauthenticated
 
+  // Let the API client report silent refreshes and dead sessions.
+  useEffect(() => {
+    configureApi({
+      onTokenRefreshed: (token) => setSession((s) => (s ? { ...s, accessToken: token } : s)),
+      onSessionExpired: () => {
+        setAccessToken(null);
+        setSession(null);
+        setStatus("unauthenticated"); // ProtectedRoute sends the user to /login
+      },
+    });
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     restoreSession()
       .then((s) => {
         if (cancelled) return;
+        setAccessToken(s.accessToken);
         setSession(s);
         setStatus("authenticated");
       })
       .catch(() => {
         if (cancelled) return;
+        setAccessToken(null);
         setSession(null);
         setStatus("unauthenticated");
       });
@@ -44,6 +58,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback((user, accessToken) => {
+    setAccessToken(accessToken);
     setSession({ user, accessToken });
     setStatus("authenticated");
   }, []);
@@ -54,6 +69,7 @@ export function AuthProvider({ children }) {
     } catch {
       // Even if the server call fails, drop the local session.
     }
+    setAccessToken(null);
     setSession(null);
     setStatus("unauthenticated");
   }, []);
