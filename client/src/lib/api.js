@@ -162,3 +162,14 @@ export const getMyProjects = (orgId) =>
 // POST /api/organization -> { data: { organization } }  (creator becomes OWNER)
 export const createOrganization = (payload) =>
   request("/organization", { method: "POST", body: payload }).then((r) => r.data.organization);
+
+// GET /api/projects/:projectId/issues?assignee=&limit=&status=...
+// Response key for the array isn't documented; accept the common shapes.
+export const getProjectIssues = (projectId, params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return request(`/projects/${projectId}/issues${qs ? `?${qs}` : ""}`).then((r) => {
+    const d = r.data;
+    return Array.isArray(d) ? d : d?.issues ?? d?.items ?? [];
+  });
+};
+
