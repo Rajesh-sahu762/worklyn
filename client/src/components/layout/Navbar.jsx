@@ -17,6 +17,7 @@ import {
 const TITLES = {
   "/": "Home",
   "/organizations/new": "New organization",
+  "/projects": "Projects",
 };
 
 const MOD = isMac ? "⌘" : "Ctrl";
@@ -28,7 +29,11 @@ export default function Navbar({ onOpenMenu, onOpenSearch }) {
   const { pathname } = useLocation();
   const { currentOrg } = useOrganization();
 
-  const pageTitle = TITLES[pathname] ?? "";
+  const pageTitle =
+  TITLES[pathname] ??
+  (pathname.startsWith("/projects/")
+    ? "Project overview"
+    : "");
 
   return (
     <header className="relative z-30 flex h-14 shrink-0 items-center gap-2 border-b border-line border-t-[3px] border-t-accent bg-surface px-3 sm:px-4 lg:gap-3 lg:px-8">

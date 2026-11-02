@@ -4,8 +4,8 @@ export const FEATURES = {
   recent: false,
   starred: false,
   notifications: false,
-  projectsList: false,
-  projectPages: false,   // routes: /projects/:projectId
+  projectsList: true,
+  projectPages: true,   // routes: /projects/:projectId
   teams: false,
   members: false,
   createIssue: false,

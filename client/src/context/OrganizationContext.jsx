@@ -23,7 +23,18 @@ const normalizeOrg = (item) => {
 };
 const normalizeProject = (item) => {
   const p = item?.project ?? item;
-  return { id: idOf(p), name: p?.name ?? "Untitled", key: p?.key ?? "", role: item?.role ?? null };
+  return {
+    ...p,
+    id: idOf(p),
+    name: p?.name ?? "Untitled",
+    key: p?.key ?? "",
+    slug: p?.slug ?? "",
+    description: p?.description ?? "",
+    projectType: p?.projectType ?? "KANBAN",
+    status: p?.status ?? "ACTIVE",
+    lead: p?.lead ?? null,
+    role: item?.role ?? p?.role ?? null,
+  };
 };
 
 export function OrganizationProvider({ children }) {
@@ -56,6 +67,7 @@ export function OrganizationProvider({ children }) {
   const currentId = currentOrg?.id ?? null;
 
   const [projState, setProjState] = useState({ orgId: null, items: [], error: "" });
+  const [projectsReloadKey, setProjectsReloadKey] = useState(0);
   useEffect(() => {
     if (!currentId) return;
     let cancelled = false;
@@ -67,10 +79,10 @@ export function OrganizationProvider({ children }) {
         if (!cancelled) setProjState({ orgId: currentId, items: [], error: err.message });
       });
     return () => { cancelled = true; };
-  }, [currentId]);
+  }, [currentId, projectsReloadKey]);
 
   const projectsLoaded = projState.orgId === currentId;
-  const projects = projectsLoaded ? projState.items : [];
+  const projects = useMemo(() => projectsLoaded ? projState.items : [], [projectsLoaded, projState.items]);
   const projectsStatus = !currentId ? "idle" : !projectsLoaded ? "loading" : projState.error ? "error" : "ready";
 
   const switchOrg = useCallback((id) => {
@@ -87,6 +99,12 @@ export function OrganizationProvider({ children }) {
     writeStored(org.id);
   }, []);
 
+  const reloadProjects = useCallback(() => {
+    if (!currentId) return;
+    setProjState({ orgId: null, items: [], error: "" });
+    setProjectsReloadKey((n) => n + 1);
+  }, [currentId]);
+
   const reloadOrgs = useCallback(() => {
     setOrgState({ status: "loading", error: "" });
     setReloadKey((n) => n + 1);
@@ -95,9 +113,9 @@ export function OrganizationProvider({ children }) {
   const value = useMemo(
     () => ({
       orgs, orgStatus: orgState.status, orgError: orgState.error, currentOrg, switchOrg, addOrganization, reloadOrgs,
-      projects, projectsStatus, projectsError: projState.error,
+      projects, projectsStatus, projectsError: projState.error, reloadProjects,
     }),
-    [orgs, orgState, currentOrg, switchOrg, addOrganization, reloadOrgs, projects, projectsStatus, projState.error]
+    [orgs, orgState, currentOrg, switchOrg, addOrganization, reloadOrgs, projects, projectsStatus, projState.error, reloadProjects]
   );
 
   return <OrgContext.Provider value={value}>{children}</OrgContext.Provider>;

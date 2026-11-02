@@ -5,7 +5,9 @@ import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import HomePage from "../pages/HomePage";
 import CreateOrganizationPage from "../pages/CreateOrganizationPage";
+import ProjectsPage from "../pages/ProjectsPage";
 import AppShell from "../components/layout/AppShell";
+import ProjectOverviewPage from "../pages/ProjectOverviewPage";
 
 // Single place for the route table. As the app grows, split into
 // organizationRoutes.jsx, teamRoutes.jsx, ... and mount them here.
@@ -21,6 +23,8 @@ export default function AppRoutes() {
         <Route element={<AppShell />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/organizations/new" element={<CreateOrganizationPage />} />
+          <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/projects/:projectId" element={<ProjectOverviewPage />} />
         </Route>
       </Route>
 

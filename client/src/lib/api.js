@@ -159,6 +159,10 @@ export const getMyOrganizations = () =>
 export const getMyProjects = (orgId) =>
   request(`/organizations/${orgId}/projects/my`).then((r) => r.data.projects ?? []);
 
+// POST /api/organizations/:organizationId/projects -> { data: { project } }
+export const createProject = (organizationId, payload) =>
+  request(`/organizations/${organizationId}/projects`, { method: "POST", body: payload }).then((r) => r.data.project);
+
 // POST /api/organization -> { data: { organization } }  (creator becomes OWNER)
 export const createOrganization = (payload) =>
   request("/organization", { method: "POST", body: payload }).then((r) => r.data.organization);
@@ -172,4 +176,9 @@ export const getProjectIssues = (projectId, params = {}) => {
     return Array.isArray(d) ? d : d?.issues ?? d?.items ?? [];
   });
 };
+
+// GET /api/projects/:projectId
+// Response: { data: { project, role } }
+export const getProject = (projectId) =>
+  request(`/projects/${projectId}`).then((r) => r.data);
 

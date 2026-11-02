@@ -6,7 +6,7 @@ import { ChevronIcon, FolderIcon, IssueIcon, PlusIcon, UsersIcon } from "./icons
 
 const ITEMS = [
   { label: "Issue", note: "Task, bug, story or epic", icon: IssueIcon, ready: FEATURES.createIssue },
-  { label: "Project", note: "A new body of work", icon: FolderIcon, ready: FEATURES.createProject },
+  { label: "Project", note: "Browse and create projects", icon: FolderIcon, ready: FEATURES.projectsList, to: "/projects" },
   { label: "Organization", note: "A new team space", icon: UsersIcon, ready: FEATURES.createOrganization, to: "/organizations/new" },
 ];
 
