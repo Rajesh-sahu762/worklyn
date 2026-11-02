@@ -94,21 +94,53 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClo
         ${mobileOpen ? "translate-x-0" : ""} lg:static lg:translate-x-0 ${collapsed ? "lg:w-[76px]" : "lg:w-64"}`}
     >
       <div className="flex h-14 shrink-0 items-center gap-2.5 px-4">
-        <span aria-hidden="true" className="grid h-8 w-8 shrink-0 place-items-center rounded-control bg-ink font-mono text-sm font-bold text-accent">W</span>
-        <span className={`text-lg font-semibold tracking-tight ${hideOnRail}`}>Worklyn</span>
-        <button type="button" onClick={onCloseMobile} aria-label="Close navigation" className={`ml-auto rounded-control p-1.5 text-ink-muted hover:text-ink lg:hidden ${focusRing}`}>
-          <CloseIcon />
-        </button>
-        <button
-          type="button"
-          onClick={onToggleCollapse}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          aria-pressed={collapsed}
-          className={`ml-auto hidden rounded-control p-1.5 text-ink-muted hover:bg-surface hover:text-ink lg:block ${collapsed ? "lg:hidden" : ""} ${focusRing}`}
-        >
-          <PanelIcon />
-        </button>
-      </div>
+  {/* Expanded Logo */}
+  <a
+    href="/"
+    aria-label="Worklyn home"
+    className={`flex min-w-0 items-center ${collapsed ? "lg:hidden" : ""}`}
+  >
+    <img
+      src="/light-expanded-logo.png"
+      alt="Worklyn"
+      draggable="false"
+      className="h-15 w-[198px] shrink-0 object-contain object-left"
+    />
+  </a>
+
+  {/* Collapsed Logo - Desktop */}
+  <img
+    src="/light-icon-logo.png"
+    alt="Worklyn"
+    draggable="false"
+    className={`hidden h-15 w-15 shrink-0 object-contain ${
+      collapsed ? "lg:block" : ""
+    }`}
+  />
+
+  {/* Mobile Close */}
+  <button
+    type="button"
+    onClick={onCloseMobile}
+    aria-label="Close navigation"
+    className={`ml-auto rounded-control p-1.5 text-ink-muted hover:text-ink lg:hidden ${focusRing}`}
+  >
+    <CloseIcon />
+  </button>
+
+  {/* Desktop Collapse */}
+  <button
+    type="button"
+    onClick={onToggleCollapse}
+    aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+    aria-pressed={collapsed}
+    className={`ml-auto hidden rounded-control p-1.5 text-ink-muted hover:bg-surface hover:text-ink lg:block ${
+      collapsed ? "lg:hidden" : ""
+    } ${focusRing}`}
+  >
+    <PanelIcon />
+  </button>
+</div>
 
       <div className="px-3 pb-3">
         <OrgSwitcher collapsed={collapsed} />

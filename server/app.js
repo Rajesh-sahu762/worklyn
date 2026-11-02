@@ -10,7 +10,7 @@ const invitationRoutes = require("./routes/invitation.route");
 const app = express();
 
 var corsOptions = {
-  origin: 'http://localhost:5173',
+  origin: ['http://localhost:5173', 'http://10.89.158.1:5173'],
   credentials: true, // Allow cookies to be sent with requests
   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 }

@@ -115,15 +115,14 @@ export default function LoginPage() {
     <div className="min-h-screen bg-canvas lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
       {/* Context panel */}
       <aside className="hidden border-r border-line bg-surface-subtle lg:flex lg:flex-col lg:justify-between lg:p-12">
-        <div className="flex items-center gap-2.5">
-          <span
-            aria-hidden="true"
-            className="grid h-8 w-8 place-items-center rounded-control bg-accent font-mono text-sm font-bold text-ink"
-          >
-            W
-          </span>
-          <span className="text-lg font-semibold tracking-tight">Worklyn</span>
-        </div>
+      <div className="flex items-center gap-0">
+  <img
+    src="/light-expanded-logo.png"
+    alt="Worklyn"
+    draggable="false"
+    className="h-20 w-auto max-w-[190px] object-contain object-left"
+  />
+</div>
 
         <div className="max-w-md">
           <h2 className="text-[34px] font-semibold leading-[1.15] tracking-tight text-ink">
@@ -157,15 +156,14 @@ export default function LoginPage() {
       {/* Form */}
       <main className="flex min-h-screen items-center justify-center px-5 py-10 sm:px-8 lg:min-h-0">
         <div className="w-full max-w-[400px]">
-          <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <span
-              aria-hidden="true"
-              className="grid h-8 w-8 place-items-center rounded-control bg-accent font-mono text-sm font-bold text-ink"
-            >
-              W
-            </span>
-            <span className="text-lg font-semibold tracking-tight">Worklyn</span>
-          </div>
+          <div className="flex items-center justify-center">
+  <img
+    src="/light-expanded-logo.png"
+    alt="Worklyn"
+    draggable="false"
+    className="h-20 w-auto max-w-[170px] object-contain object-left"
+  />
+</div>
 
           <h1 className="text-[26px] font-semibold tracking-tight">Sign in</h1>
           <p className="mt-1.5 text-[15px] text-ink-muted">Pick up where your team left off.</p>
@@ -218,6 +216,7 @@ export default function LoginPage() {
                   id={passwordId}
                   type={showPassword ? "text" : "password"}
                   name="password"
+                  placeholder="Enter your password"
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

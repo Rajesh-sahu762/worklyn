@@ -380,6 +380,7 @@ export default function RegisterPage() {
               {...pwd("firstName")}
               type="text"
               autoComplete="given-name"
+              placeholder="Enter your first name"
               maxLength={50}
             />
           </Field>
@@ -391,6 +392,7 @@ export default function RegisterPage() {
             <input
               {...pwd("lastName")}
               type="text"
+              placeholder="Enter your last name"
               autoComplete="family-name"
               maxLength={50}
             />
@@ -417,6 +419,7 @@ export default function RegisterPage() {
               {...pwd("password")}
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
+              placeholder="Create a password"
               className={`${inputClass(!!fieldErrors.password)} pr-16`}
             />
             <button
@@ -440,6 +443,7 @@ export default function RegisterPage() {
             type="tel"
             autoComplete="tel"
             inputMode="tel"
+            placeholder="Enter your mobile number"
           />
         </Field>
 

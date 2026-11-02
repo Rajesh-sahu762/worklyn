@@ -1,7 +1,7 @@
 // API client. The access token lives in memory only; the refresh token is the
 // HttpOnly cookie (credentials: "include"). On a 401 for an authenticated
 // request we refresh once and retry, so pages never deal with token expiry.
-const BASE = `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api`;
+const BASE = `${import.meta.env.VITE_API_URL || "http://10.89.158.1:5000"}/api`;
 
 export class ApiError extends Error {
   constructor(message, status, fieldErrors = {}) {

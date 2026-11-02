@@ -24,9 +24,13 @@ export function Field({ id, label, hint, error, children }) {
 export function Logo() {
   return (
     <div className="flex items-center gap-2.5">
-      <span aria-hidden="true" className="grid h-8 w-8 place-items-center rounded-control bg-accent font-mono text-sm font-bold text-ink">W</span>
-      <span className="text-lg font-semibold tracking-tight">Worklyn</span>
-    </div>
+  <img
+    src="/light-expanded-logo.png"
+    alt="Worklyn"
+    draggable="false"
+    className="h-20 w-auto max-w-[190px] object-contain object-left"
+  />
+</div>
   );
 }
 
