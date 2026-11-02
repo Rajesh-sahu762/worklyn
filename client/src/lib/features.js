@@ -10,6 +10,6 @@ export const FEATURES = {
   members: false,
   createIssue: false,
   createProject: false,
-  createOrganization: false,
+  createOrganization: true,
   settings: false,
 };

@@ -158,3 +158,7 @@ export const getMyOrganizations = () =>
 // GET /api/organizations/:orgId/projects/my -> { data: { projects: [...] } }
 export const getMyProjects = (orgId) =>
   request(`/organizations/${orgId}/projects/my`).then((r) => r.data.projects ?? []);
+
+// POST /api/organization -> { data: { organization } }  (creator becomes OWNER)
+export const createOrganization = (payload) =>
+  request("/organization", { method: "POST", body: payload }).then((r) => r.data.organization);

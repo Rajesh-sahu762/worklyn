@@ -7,7 +7,7 @@ import UserMenu from "./UserMenu";
 import { isMac } from "../../lib/platform";
 import { BellIcon, HelpIcon, MenuIcon, SearchIcon, SettingsIcon } from "./icons";
 
-const TITLES = { "/": "Home" };
+const TITLES = { "/": "Home", "/organizations/new": "New organization" };
 const MOD = isMac ? "⌘" : "Ctrl";
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-support";

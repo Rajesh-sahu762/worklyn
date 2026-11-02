@@ -20,10 +20,17 @@
   --color-status-review: #8053a6;
   --color-status-done: #26734d;
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --radius-control: 6px;
   --radius-panel: 10px;
+
+  --color-priority-low: #68766e;
+  --color-priority-medium: #316b9a;
+  --color-priority-high: #b26017;
+  --color-priority-highest: #b33c3c;
 }
 
 body {

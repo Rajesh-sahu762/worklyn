@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useNavigate } from "react-router";
 import { FEATURES } from "../../lib/features";
 import useDismiss from "../../lib/useDismiss";
 import { ChevronIcon, FolderIcon, IssueIcon, PlusIcon, UsersIcon } from "./icons";
@@ -6,10 +7,11 @@ import { ChevronIcon, FolderIcon, IssueIcon, PlusIcon, UsersIcon } from "./icons
 const ITEMS = [
   { label: "Issue", note: "Task, bug, story or epic", icon: IssueIcon, ready: FEATURES.createIssue },
   { label: "Project", note: "A new body of work", icon: FolderIcon, ready: FEATURES.createProject },
-  { label: "Organization", note: "A new team space", icon: UsersIcon, ready: FEATURES.createOrganization },
+  { label: "Organization", note: "A new team space", icon: UsersIcon, ready: FEATURES.createOrganization, to: "/organizations/new" },
 ];
 
 export default function CreateMenu() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useDismiss(ref, open, () => setOpen(false));
@@ -31,13 +33,13 @@ export default function CreateMenu() {
 
       {open && (
         <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-72 rounded-panel border border-line bg-surface p-1.5 shadow-lg">
-          {ITEMS.map(({ label, note, icon: Icon, ready }) => (
+          {ITEMS.map(({ label, note, icon: Icon, ready, to }) => (
             <button
               key={label}
               type="button"
               role="menuitem"
               aria-disabled={!ready}
-              onClick={() => { if (ready) setOpen(false); }}
+              onClick={() => { if (!ready) return; setOpen(false); if (to) navigate(to); }}
               className={`flex w-full items-center gap-3 rounded-control px-3 py-2.5 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent-support ${ready ? "hover:bg-surface-subtle" : "cursor-not-allowed"}`}
             >
               <span className={`grid h-8 w-8 place-items-center rounded-control ${ready ? "bg-accent text-ink" : "bg-surface-subtle text-ink-faint"}`}><Icon /></span>

@@ -24,6 +24,7 @@ export default function CommandPalette({ open, onClose }) {
     orgs.filter((o) => o.id !== currentOrg?.id).forEach((o) =>
       list.push({ id: `o-${o.id}`, group: "Switch organization", label: o.name, enabled: true, run: () => switchOrg(o.id) })
     );
+    list.push({ id: "new-org", group: "Create", label: "Create organization", enabled: FEATURES.createOrganization, run: () => navigate("/organizations/new") });
     list.push({ id: "signout", group: "Account", label: "Sign out", enabled: true, run: logout });
     return list;
   }, [projects, orgs, currentOrg, navigate, switchOrg, logout]);

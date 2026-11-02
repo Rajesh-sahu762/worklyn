@@ -78,6 +78,15 @@ export function OrganizationProvider({ children }) {
     writeStored(id);
   }, []);
 
+  // After creating an organization: show it immediately and make it current.
+  const addOrganization = useCallback((raw) => {
+    const org = normalizeOrg({ organization: raw, role: "OWNER" });
+    if (!org.id) return;
+    setOrgs((list) => [...list.filter((o) => o.id !== org.id), org]);
+    setStoredId(org.id);
+    writeStored(org.id);
+  }, []);
+
   const reloadOrgs = useCallback(() => {
     setOrgState({ status: "loading", error: "" });
     setReloadKey((n) => n + 1);
@@ -85,10 +94,10 @@ export function OrganizationProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      orgs, orgStatus: orgState.status, orgError: orgState.error, currentOrg, switchOrg, reloadOrgs,
+      orgs, orgStatus: orgState.status, orgError: orgState.error, currentOrg, switchOrg, addOrganization, reloadOrgs,
       projects, projectsStatus, projectsError: projState.error,
     }),
-    [orgs, orgState, currentOrg, switchOrg, reloadOrgs, projects, projectsStatus, projState.error]
+    [orgs, orgState, currentOrg, switchOrg, addOrganization, reloadOrgs, projects, projectsStatus, projState.error]
   );
 
   return <OrgContext.Provider value={value}>{children}</OrgContext.Provider>;

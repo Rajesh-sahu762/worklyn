@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { Link } from "react-router";
 import { useOrganization } from "../../context/OrganizationContext";
 import useDismiss from "../../lib/useDismiss";
 import { CheckIcon, ChevronIcon } from "./icons";
@@ -26,7 +27,8 @@ export default function OrgSwitcher({ collapsed }) {
   if (!currentOrg) {
     return (
       <div className={`rounded-panel border border-dashed border-ink-faint/60 px-3 py-3 text-sm text-ink-muted ${hideOnRail}`}>
-        No organization yet
+        <p>No organization yet</p>
+        <Link to="/organizations/new" className="mt-1 inline-block font-medium text-accent-support underline underline-offset-2">Create one</Link>
       </div>
     );
   }
@@ -74,6 +76,15 @@ export default function OrgSwitcher({ collapsed }) {
               </li>
             );
           })}
+          <li role="presentation" className="mt-1 border-t border-line pt-1">
+            <Link
+              to="/organizations/new"
+              onClick={() => setOpen(false)}
+              className="block rounded-control px-2 py-2 text-sm font-medium text-accent-support hover:bg-surface-subtle focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent-support"
+            >
+              + Create organization
+            </Link>
+          </li>
         </ul>
       )}
     </div>
