@@ -5,7 +5,7 @@ import { CheckIcon, ChevronIcon } from "../layout/icons";
 
 const fmt = (d) => new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "short" });
 const Count = ({ n }) =>
-  n == null ? null : <span className="rounded-full bg-accent px-1.5 text-xs font-semibold text-ink">{n}</span>;
+  n == null ? null : <span className="rounded-full bg-brand-lime/45 px-1.5 text-xs font-semibold text-emerald">{n}</span>;
 
 export default function ForYou({
   tabs,
@@ -69,7 +69,7 @@ export default function ForYou({
                       setMenuOpen(false);
                     }}
                     className={`flex w-full items-center gap-2 rounded-control px-3 py-2 text-left text-sm focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent-support ${
-                      t.id === tab ? "bg-surface-subtle font-medium text-ink" : t.soon ? "cursor-not-allowed text-ink-faint" : "text-ink hover:bg-surface-subtle"
+                      t.id === tab ? "bg-brand-lime font-medium text-emerald" : t.soon ? "cursor-not-allowed text-ink-faint" : "text-ink hover:bg-surface-subtle"
                     }`}
                   >
                     <span className="flex-1">{t.label}</span>
@@ -101,7 +101,7 @@ export default function ForYou({
               onClick={() => !t.soon && onTab(t.id)}
               className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-control px-3 py-1.5 text-sm transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent-support ${
                 t.id === tab
-                  ? "bg-surface font-medium text-ink shadow-sm"
+                  ? "bg-brand-lime font-medium text-emerald shadow-sm"
                   : t.soon
                     ? "cursor-not-allowed text-ink-faint"
                     : "text-ink-muted hover:text-ink"

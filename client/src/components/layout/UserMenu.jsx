@@ -59,7 +59,7 @@ export default function UserMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={`Account menu for ${name}`}
-        className="grid h-9 w-9 place-items-center rounded-full bg-ink text-sm font-semibold text-accent ring-offset-2 transition-all hover:ring-2 hover:ring-accent motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-support"
+        className="grid h-9 w-9 place-items-center rounded-full bg-ink text-sm font-semibold text-brand-lime ring-offset-2 transition-all hover:ring-2 hover:ring-brand-lime motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-support"
       >
         {initials}
       </button>
@@ -74,7 +74,7 @@ export default function UserMenu() {
           {/* Account information */}
           <div className="flex items-center gap-3 px-3 py-3">
 
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink text-sm font-semibold text-accent">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink text-sm font-semibold text-brand-lime">
               {initials}
             </div>
 

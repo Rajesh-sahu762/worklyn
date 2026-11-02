@@ -67,7 +67,7 @@ function FilterSelect({ value, onChange, options, label }) {
   );
 }
 
-function IssueRow({ issue }) {
+function IssueRow({ issue ,projectId}) {
   const assignee = issue.assignee;
   const assigneeName =
     typeof assignee === "object" && assignee
@@ -88,9 +88,12 @@ function IssueRow({ issue }) {
         </span>
 
         <div className="min-w-0">
-          <p className="break-words text-sm font-medium text-ink">
-            {issue.title || "Untitled issue"}
-          </p>
+          <Link
+  to={`/projects/${projectId}/issues/${issue._id || issue.id}`}
+  className="break-words text-sm font-medium text-ink hover:text-accent-support"
+>
+  {issue.title || "Untitled issue"}
+</Link>
 
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink-muted">
             <span className="font-mono">
@@ -429,11 +432,12 @@ export default function ProjectIssuesPage() {
 
             <div>
               {issues.map((issue) => (
-                <IssueRow
-                  key={issue._id || issue.id || issue.issueKey}
-                  issue={issue}
-                />
-              ))}
+  <IssueRow
+    key={issue._id || issue.id || issue.issueKey}
+    issue={issue}
+    projectId={projectId}
+  />
+))}
             </div>
 
             <div className="flex items-center justify-between border-t border-line px-4 py-3 sm:px-5">

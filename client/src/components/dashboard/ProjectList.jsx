@@ -28,7 +28,7 @@ export default function ProjectList({ projects, status }) {
               <>
                 <span
                   aria-hidden="true"
-                  className="grid h-11 min-w-11 place-items-center rounded-control bg-ink px-1.5 font-mono text-xs font-bold text-accent"
+                  className="grid h-11 min-w-11 place-items-center rounded-control bg-ink px-1.5 font-mono text-xs font-bold text-brand-lime"
                 >
                   {(p.key || p.name.charAt(0)).slice(0, 4).toUpperCase()}
                 </span>
@@ -43,7 +43,7 @@ export default function ProjectList({ projects, status }) {
                 {FEATURES.projectPages ? (
                   <Link
                     to={`/projects/${p.id}`}
-                    className={`${card} transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-accent-support`}
+                    className={`${card} transition-all hover:border-accent/40 hover:shadow-md focus-visible:outline-2 focus-visible:outline-accent-support`}
                   >
                     {body}
                   </Link>

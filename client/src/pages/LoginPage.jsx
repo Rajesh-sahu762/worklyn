@@ -239,7 +239,7 @@ export default function LoginPage() {
               type="submit"
               disabled={pending}
               aria-busy={pending}
-              className="flex w-full items-center justify-center gap-2 rounded-control bg-accent px-4 py-2.5 text-[15px] font-semibold text-ink
+              className="flex w-full items-center justify-center gap-2 rounded-control bg-accent px-4 py-2.5 text-[15px] font-semibold text-white shadow-sm
                          transition-colors duration-150 hover:bg-accent-strong motion-reduce:transition-none
                          focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink
                          disabled:cursor-not-allowed disabled:opacity-70"

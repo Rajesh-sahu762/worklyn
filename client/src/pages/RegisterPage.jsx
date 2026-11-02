@@ -25,7 +25,7 @@ function Hierarchy() {
           <div className="flex flex-col items-center">
             <span
               aria-hidden="true"
-              className="mt-1.5 h-2.5 w-2.5 rounded-full bg-accent-support"
+              className="mt-1.5 h-2.5 w-2.5 rounded-full bg-brand-lime"
             />
             {i < HIERARCHY.length - 1 && (
               <span aria-hidden="true" className="w-px grow bg-ink-faint/50" />
@@ -58,7 +58,7 @@ function SubmitButton({ pending, idle, busy }) {
       type="submit"
       disabled={pending}
       aria-busy={pending}
-      className="flex w-full items-center justify-center gap-2 rounded-control bg-accent px-4 py-2.5 text-[15px] font-semibold text-ink transition-colors duration-150 hover:bg-accent-strong motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-70"
+      className="flex w-full items-center justify-center gap-2 rounded-control bg-accent px-4 py-2.5 text-[15px] font-semibold text-white shadow-sm transition-colors duration-150 hover:bg-accent-strong motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-support disabled:cursor-not-allowed disabled:opacity-70"
     >
       {pending && (
         <span
@@ -251,7 +251,7 @@ export default function RegisterPage() {
         <button
           type="button"
           onClick={onGoToLogin}
-          className="mt-8 w-full rounded-control bg-accent px-4 py-2.5 text-[15px] font-semibold text-ink transition-colors duration-150 hover:bg-accent-strong motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="mt-8 w-full rounded-control bg-accent px-4 py-2.5 text-[15px] font-semibold text-white shadow-sm transition-colors duration-150 hover:bg-accent-strong motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-support"
         >
           Go to sign in
         </button>

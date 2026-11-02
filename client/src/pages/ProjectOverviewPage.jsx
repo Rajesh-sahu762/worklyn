@@ -268,14 +268,14 @@ export default function ProjectOverviewPage() {
 
       {/* Project header */}
       <section className="overflow-hidden rounded-panel border border-line bg-surface">
-        <div className="h-1 bg-accent" />
+        <div className="h-1 bg-brand-lime" />
 
         <div className="p-5 sm:p-7">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
 
             <div className="flex min-w-0 items-start gap-4">
 
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-ink font-mono text-sm font-bold tracking-wide text-accent">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-ink font-mono text-sm font-bold tracking-wide text-brand-lime">
                 {(projectKey || projectName.slice(0, 2))
                   .slice(0, 4)
                   .toUpperCase()}

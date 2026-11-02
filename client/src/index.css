@@ -1,18 +1,22 @@
 @import "tailwindcss";
 
-/* Worklyn "Workshop Signal" tokens (Tailwind v4 @theme) */
+/* Worklyn Warm Ivory + Emerald theme tokens (Tailwind v4 @theme) */
 @theme {
-  --color-canvas: #f4f5f2;
-  --color-surface: #ffffff;
-  --color-surface-subtle: #eaeee9;
-  --color-ink: #17231d;
-  --color-ink-muted: #59665f;
-  --color-ink-faint: #748078;
-  --color-line: #d8ded8;
-  --color-accent: #b8f04a;
-  --color-accent-strong: #8fca24;
-  --color-accent-support: #316b59;
-  --color-danger: #b33c3c;
+  --color-canvas: #faf6ed;
+  --color-surface: #fffdf8;
+  --color-surface-subtle: #f2ecdf;
+  --color-ink: #000000;
+  --color-ink-muted: #52685f;
+  --color-ink-faint: #7b8981;
+  --color-line: #e4dbca;
+  --color-vermilion: #c9442e;
+  --color-vermilion-strong: #a93525;
+  --color-accent: var(--color-vermilion);
+  --color-accent-strong: var(--color-vermilion-strong);
+  --color-emerald: #000000;
+  --color-accent-support: var(--color-emerald);
+  --color-brand-lime: #b8f04a;
+  --color-danger: var(--color-vermilion);
 
   --color-status-backlog: #6e7880;
   --color-status-todo: #316b9a;

@@ -87,7 +87,7 @@ export default function CommandPalette({ open, onClose }) {
                 aria-disabled={!item.enabled}
                 onMouseEnter={() => setActive(i)}
                 onClick={() => run(item)}
-                className={`flex items-center gap-3 rounded-control px-3 py-2 text-sm ${i === active ? "bg-surface-subtle" : ""} ${item.enabled ? "cursor-pointer text-ink" : "cursor-not-allowed text-ink-muted"}`}
+                className={`flex items-center gap-3 rounded-control px-3 py-2 text-sm ${i === active ? "bg-brand-lime/35" : ""} ${item.enabled ? "cursor-pointer text-ink" : "cursor-not-allowed text-ink-muted"}`}
               >
                 {item.hint && <span className="rounded-[5px] border border-line bg-surface px-1.5 font-mono text-[10px] font-semibold">{item.hint.toUpperCase()}</span>}
                 <span className="truncate">{item.label}</span>

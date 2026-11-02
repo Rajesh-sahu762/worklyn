@@ -116,7 +116,7 @@ export default function CreateOrganizationPage() {
               type="submit"
               disabled={pending}
               aria-busy={pending}
-              className="inline-flex items-center gap-2 rounded-control bg-accent px-4 py-2.5 text-[15px] font-semibold text-ink transition-colors duration-150 hover:bg-accent-strong motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex items-center gap-2 rounded-control bg-accent px-4 py-2.5 text-[15px] font-semibold text-white shadow-sm transition-colors duration-150 hover:bg-accent-strong motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-support disabled:cursor-not-allowed disabled:opacity-70"
             >
               {pending && <span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-ink/30 border-t-ink motion-reduce:animate-none" />}
               {pending ? "Creating…" : "Create organization"}
@@ -130,7 +130,7 @@ export default function CreateOrganizationPage() {
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-ink-muted">Preview</p>
           <div className="rounded-panel bg-surface-subtle p-4">
             <div className="flex items-center gap-3 rounded-panel border border-line bg-surface p-2 shadow-sm">
-              <span aria-hidden="true" className="grid h-9 w-9 shrink-0 place-items-center rounded-control bg-accent font-mono text-sm font-bold text-ink">{initial}</span>
+              <span aria-hidden="true" className="grid h-9 w-9 shrink-0 place-items-center rounded-control bg-brand-lime font-mono text-sm font-bold text-black">{initial}</span>
               <span className="min-w-0">
                 <span className="block truncate text-sm font-semibold text-ink">{name.trim() || "Your organization"}</span>
                 <span className="block text-xs text-ink-muted">Owner</span>

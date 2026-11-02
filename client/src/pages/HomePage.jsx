@@ -78,7 +78,7 @@ export default function HomePage() {
         <p className="mt-1.5 text-[15px] text-ink-muted">You're not part of an organization yet.</p>
         <Link
           to="/organizations/new"
-          className="mt-6 inline-flex rounded-control bg-accent px-4 py-2.5 text-[15px] font-semibold text-ink transition-colors hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          className="mt-6 inline-flex rounded-control bg-accent px-4 py-2.5 text-[15px] font-semibold text-white shadow-sm transition-colors hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-support"
         >
           Create your first organization
         </Link>
@@ -106,7 +106,7 @@ export default function HomePage() {
       </header>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatTile label="Projects" value={projects.length} loading={projectsStatus === "loading"} tone="bg-accent-support" />
+        <StatTile label="Projects" value={projects.length} loading={projectsStatus === "loading"} tone="bg-brand-lime" />
         <StatTile label="Open, assigned to me" value={open.length} loading={loading} />
         <StatTile label="In progress" value={inProgress} loading={loading} tone="bg-status-progress" />
         <StatTile label="Overdue" value={overdue} loading={loading} tone="bg-danger" />

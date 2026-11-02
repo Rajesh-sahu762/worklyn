@@ -38,7 +38,7 @@ export default function Navbar({ onOpenMenu, onOpenSearch }) {
       : "");
 
   return (
-    <header className="relative z-30 flex h-14 shrink-0 items-center gap-2 border-b border-line border-t-[3px] border-t-accent bg-surface px-3 sm:px-4 lg:gap-3 lg:px-8">
+    <header className="relative z-30 flex h-14 shrink-0 items-center gap-2 border-b border-line border-t-[3px] border-t-brand-lime bg-surface px-3 sm:px-4 lg:gap-3 lg:px-8">
 
       {/* Left: Navigation + Brand + Breadcrumb */}
       <div className="flex min-w-0 flex-1 items-center gap-2">

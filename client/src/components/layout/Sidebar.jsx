@@ -25,9 +25,9 @@ const GROUPS = [
 ];
 
 const row = "flex items-center gap-3 rounded-control px-3 py-2 text-[15px]";
-const activeRow = "bg-surface font-medium text-ink shadow-[inset_3px_0_0_0_var(--color-accent-strong)]";
-const idleRow = "text-ink-muted hover:bg-surface/70 hover:text-ink";
-const focusRing = "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent-support";
+const activeRow = "bg-brand-lime font-semibold text-black shadow-sm";
+const idleRow = "text-white/75 hover:bg-white/10 hover:text-white";
+const focusRing = "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-lime";
 
 function NavItem({ item, collapsed, onNavigate }) {
   const Icon = item.icon;
@@ -35,10 +35,10 @@ function NavItem({ item, collapsed, onNavigate }) {
 
   if (!item.ready) {
     return (
-      <span aria-disabled="true" title="Coming soon" className={`${row} cursor-not-allowed text-ink-faint`}>
+      <span aria-disabled="true" title="Coming soon" className={`${row} cursor-not-allowed text-white/45`}>
         <Icon className="shrink-0" />
         {label}
-        <span className={`ml-auto rounded-full bg-surface px-2 py-0.5 text-[11px] text-ink-muted ${collapsed ? "lg:hidden" : ""}`}>Soon</span>
+        <span className={`ml-auto rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-white/55 ${collapsed ? "lg:hidden" : ""}`}>Soon</span>
       </span>
     );
   }
@@ -58,7 +58,7 @@ function NavItem({ item, collapsed, onNavigate }) {
 
 function ProjectItem({ project, collapsed, onNavigate }) {
   const chip = (
-    <span aria-hidden="true" className="grid h-6 min-w-6 shrink-0 place-items-center rounded-[5px] border border-line bg-surface px-1 font-mono text-[10px] font-semibold text-ink">
+    <span aria-hidden="true" className="grid h-6 min-w-6 shrink-0 place-items-center rounded-[5px] border border-white/15 bg-white/10 px-1 font-mono text-[10px] font-semibold text-white">
       {(project.key || project.name.charAt(0)).slice(0, 4).toUpperCase()}
     </span>
   );
@@ -66,7 +66,7 @@ function ProjectItem({ project, collapsed, onNavigate }) {
 
   if (!FEATURES.projectPages) {
     return (
-      <span aria-disabled="true" title={collapsed ? project.name : "Project pages are coming next"} className={`${row} cursor-not-allowed py-1.5 text-ink-muted`}>
+      <span aria-disabled="true" title={collapsed ? project.name : "Project pages are coming next"} className={`${row} cursor-not-allowed py-1.5 text-white/60`}>
         {chip}{name}
       </span>
     );
@@ -90,7 +90,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClo
   return (
     <aside
       aria-label="Primary"
-      className={`fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col border-r border-line bg-surface-subtle transition-transform duration-200 motion-reduce:transition-none
+      className={`fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col border-r border-white/10 bg-black transition-transform duration-200 motion-reduce:transition-none
         ${mobileOpen ? "translate-x-0" : ""} lg:static lg:translate-x-0 ${collapsed ? "lg:w-[76px]" : "lg:w-64"}`}
     >
       <div className="flex h-14 shrink-0 items-center gap-2.5 px-4">
@@ -101,10 +101,10 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClo
     className={`flex min-w-0 items-center ${collapsed ? "lg:hidden" : ""}`}
   >
     <img
-      src="/light-expanded-logo.png"
+      src="/Dark-expanded-Logo.png"
       alt="Worklyn"
       draggable="false"
-      className="h-15 w-[198px] shrink-0 object-contain object-left"
+      className="h-15 w-[198px] shrink-0 rounded-[4px] bg-accent-support object-contain object-left"
     />
   </a>
 
@@ -123,7 +123,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClo
     type="button"
     onClick={onCloseMobile}
     aria-label="Close navigation"
-    className={`ml-auto rounded-control p-1.5 text-ink-muted hover:text-ink lg:hidden ${focusRing}`}
+    className={`ml-auto rounded-control p-1.5 text-white/70 hover:bg-white/10 hover:text-white lg:hidden ${focusRing}`}
   >
     <CloseIcon />
   </button>
@@ -134,7 +134,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClo
     onClick={onToggleCollapse}
     aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
     aria-pressed={collapsed}
-    className={`ml-auto hidden rounded-control p-1.5 text-ink-muted hover:bg-surface hover:text-ink lg:block ${
+    className={`ml-auto hidden rounded-control p-1.5 text-white/70 hover:bg-white/10 hover:text-white lg:block ${
       collapsed ? "lg:hidden" : ""
     } ${focusRing}`}
   >
@@ -145,7 +145,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClo
       <div className="px-3 pb-3">
         <OrgSwitcher collapsed={collapsed} />
         {collapsed && (
-          <button type="button" onClick={onToggleCollapse} aria-label="Expand sidebar" className={`mt-3 hidden w-full justify-center rounded-control p-2 text-ink-muted hover:bg-surface hover:text-ink lg:flex ${focusRing}`}>
+          <button type="button" onClick={onToggleCollapse} aria-label="Expand sidebar" className={`mt-3 hidden w-full justify-center rounded-control p-2 text-white/70 hover:bg-white/10 hover:text-white lg:flex ${focusRing}`}>
             <PanelIcon />
           </button>
         )}
@@ -154,7 +154,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClo
       <nav aria-label="Workspace" className="flex-1 space-y-6 overflow-y-auto px-3 pb-6">
         {GROUPS.map((g) => (
           <div key={g.label}>
-            <h2 className={`px-3 pb-2 text-xs font-medium uppercase tracking-wide text-ink-muted ${hideOnRail}`}>{g.label}</h2>
+            <h2 className={`px-3 pb-2 text-xs font-medium uppercase tracking-wide text-white/50 ${hideOnRail}`}>{g.label}</h2>
             <ul className="space-y-0.5">
               {g.items.map((item) => (
                 <li key={item.label}><NavItem item={item} collapsed={collapsed} onNavigate={onCloseMobile} /></li>
@@ -165,15 +165,15 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClo
 
         {currentOrg && (
           <div>
-            <h2 className={`px-3 pb-2 text-xs font-medium uppercase tracking-wide text-ink-muted ${hideOnRail}`}>Your projects</h2>
+            <h2 className={`px-3 pb-2 text-xs font-medium uppercase tracking-wide text-white/50 ${hideOnRail}`}>Your projects</h2>
             {projectsStatus === "loading" && (
               <div aria-hidden="true" className="space-y-2 px-3">
-                {[0, 1, 2].map((i) => <div key={i} className="h-6 animate-pulse rounded-control bg-surface/70 motion-reduce:animate-none" />)}
+                {[0, 1, 2].map((i) => <div key={i} className="h-6 animate-pulse rounded-control bg-white/10 motion-reduce:animate-none" />)}
               </div>
             )}
-            {projectsStatus === "error" && <p role="alert" className={`px-3 text-sm text-danger ${hideOnRail}`}>{projectsError || "Couldn't load projects."}</p>}
+            {projectsStatus === "error" && <p role="alert" className={`px-3 text-sm text-[#ffad9d] ${hideOnRail}`}>{projectsError || "Couldn't load projects."}</p>}
             {projectsStatus === "ready" && projects.length === 0 && (
-              <p className={`px-3 text-sm text-ink-muted ${hideOnRail}`}>No projects yet.</p>
+              <p className={`px-3 text-sm text-white/60 ${hideOnRail}`}>No projects yet.</p>
             )}
             {projectsStatus === "ready" && projects.length > 0 && (
               <ul className="space-y-0.5">

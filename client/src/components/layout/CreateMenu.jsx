@@ -24,7 +24,7 @@ export default function CreateMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Create"
-        className="inline-flex h-9 items-center gap-1.5 rounded-control bg-accent px-3 text-sm font-semibold text-ink transition-colors hover:bg-accent-strong motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className="inline-flex h-9 items-center gap-1.5 rounded-control bg-accent px-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-strong motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-support"
       >
         <PlusIcon />
         <span className="hidden sm:inline">Create</span>
@@ -42,7 +42,7 @@ export default function CreateMenu() {
               onClick={() => { if (!ready) return; setOpen(false); if (to) navigate(to); }}
               className={`flex w-full items-center gap-3 rounded-control px-3 py-2.5 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent-support ${ready ? "hover:bg-surface-subtle" : "cursor-not-allowed"}`}
             >
-              <span className={`grid h-8 w-8 place-items-center rounded-control ${ready ? "bg-accent text-ink" : "bg-surface-subtle text-ink-faint"}`}><Icon /></span>
+              <span className={`grid h-8 w-8 place-items-center rounded-control ${ready ? "bg-accent text-white" : "bg-surface-subtle text-ink-faint"}`}><Icon /></span>
               <span className="min-w-0 flex-1">
                 <span className={`block text-sm font-medium ${ready ? "text-ink" : "text-ink-muted"}`}>{label}</span>
                 <span className="block truncate text-xs text-ink-muted">{note}</span>

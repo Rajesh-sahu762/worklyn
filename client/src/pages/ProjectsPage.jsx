@@ -31,7 +31,7 @@ function ProjectCard({ project }) {
   className="group flex min-h-52 flex-col rounded-panel border border-line bg-surface p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-ink-faint/50 hover:shadow-[0_10px_30px_-22px_rgba(23,35,29,0.35)] motion-reduce:transform-none motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-support"
 >
       <div className="flex items-start justify-between gap-3">
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[9px] bg-ink font-mono text-xs font-bold tracking-wide text-accent">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[9px] bg-ink font-mono text-xs font-bold tracking-wide text-brand-lime">
           {initials}
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-canvas px-2.5 py-1 text-[11px] font-medium text-ink-muted">
@@ -197,7 +197,7 @@ function CreateProjectDialog({ organizationId, onClose, onCreated }) {
 
           <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:flex-row sm:justify-end">
             <button type="button" onClick={onClose} disabled={saving} className="h-10 rounded-control px-4 text-sm font-medium text-ink-muted hover:bg-surface-subtle disabled:opacity-50">Cancel</button>
-            <button type="submit" disabled={saving || !name.trim() || key.trim().length < 2 || slug.trim().length < 2} className="inline-flex h-10 items-center justify-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-ink transition hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-60">
+            <button type="submit" disabled={saving || !name.trim() || key.trim().length < 2 || slug.trim().length < 2} className="inline-flex h-10 items-center justify-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-60">
               {saving ? "Creating…" : "Create project"}
               {!saving && <Plus size={16} />}
             </button>
@@ -247,7 +247,7 @@ export default function ProjectsPage() {
         <span className="grid h-14 w-14 place-items-center rounded-2xl bg-surface-subtle text-ink-muted"><FolderKanban size={25} /></span>
         <h1 className="mt-5 text-xl font-semibold tracking-tight">Start with an organization</h1>
         <p className="mt-2 max-w-sm text-sm leading-6 text-ink-muted">Projects live inside an organization. Create one first, then bring your team’s work together.</p>
-        <button type="button" onClick={() => navigate("/organizations/new")} className="mt-5 rounded-control bg-accent px-4 py-2.5 text-sm font-semibold text-ink hover:bg-accent-strong">Create organization</button>
+        <button type="button" onClick={() => navigate("/organizations/new")} className="mt-5 rounded-control bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-accent-strong">Create organization</button>
       </section>
     );
   }
@@ -261,7 +261,7 @@ export default function ProjectsPage() {
           <p className="mt-1.5 max-w-xl text-sm leading-6 text-ink-muted">A focused home for the work your team is moving forward.</p>
         </div>
         {canCreate && (
-          <button type="button" onClick={() => setShowCreate(true)} className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-control bg-ink px-4 text-sm font-semibold text-white transition hover:bg-accent-support focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-support">
+          <button type="button" onClick={() => setShowCreate(true)} className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-support">
             <Plus size={17} /> Create project
           </button>
         )}
@@ -311,10 +311,10 @@ export default function ProjectsPage() {
 
         {projectsStatus === "ready" && projects.length === 0 && (
           <div className="mt-5 flex min-h-72 flex-col items-center justify-center rounded-panel border border-dashed border-ink-faint/40 bg-surface/70 px-6 py-10 text-center">
-            <span className="grid h-12 w-12 place-items-center rounded-xl bg-accent/35 text-ink"><FolderKanban size={23} /></span>
+            <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand-lime/35 text-emerald"><FolderKanban size={23} /></span>
             <h3 className="mt-4 text-base font-semibold">Your first project starts here</h3>
             <p className="mt-1.5 max-w-sm text-sm leading-6 text-ink-muted">Create a project for a product, client, or team initiative. Keep tasks and progress organized in one place.</p>
-            {canCreate && <button type="button" onClick={() => setShowCreate(true)} className="mt-5 inline-flex items-center gap-2 rounded-control bg-accent px-4 py-2.5 text-sm font-semibold text-ink hover:bg-accent-strong"><Plus size={16} /> Create your first project</button>}
+            {canCreate && <button type="button" onClick={() => setShowCreate(true)} className="mt-5 inline-flex items-center gap-2 rounded-control bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-accent-strong"><Plus size={16} /> Create your first project</button>}
             {!canCreate && <p className="mt-4 text-xs text-ink-faint">Ask an organization owner or admin to create a project.</p>}
           </div>
         )}
