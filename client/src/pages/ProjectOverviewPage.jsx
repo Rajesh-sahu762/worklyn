@@ -8,6 +8,7 @@ import {
   FolderKanban,
   Layers3,
   RefreshCw,
+  ArrowUpRight,
 } from "lucide-react";
 
 import { getProject, getProjectIssues } from "../lib/api";
@@ -335,69 +336,78 @@ export default function ProjectOverviewPage() {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
 
         {/* Recent issues */}
-        <section className="min-w-0 overflow-hidden rounded-panel border border-line bg-surface">
+       {/* Recent issues */}
+<section className="min-w-0 overflow-hidden rounded-panel border border-line bg-surface">
+  <div className="flex flex-col gap-3 border-b border-line px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+    <div>
+      <h2 className="text-sm font-semibold text-ink">
+        Recent issues
+      </h2>
+      <p className="mt-0.5 text-xs text-ink-muted">
+        Latest updated work in this project
+      </p>
+    </div>
 
-          <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-4 sm:px-5">
-            <div>
-              <h2 className="text-sm font-semibold text-ink">
-                Recent issues
-              </h2>
+    <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
+      <Link
+        to={`/projects/${projectId}/issues`}
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent-support transition hover:underline"
+      >
+        View all issues
+        <ArrowUpRight size={14} />
+      </Link>
 
-              <p className="mt-0.5 text-xs text-ink-muted">
-                Latest updated work in this project
-              </p>
-            </div>
+      <span className="rounded-full bg-surface-subtle px-2.5 py-1 text-[11px] font-medium text-ink-muted">
+        Latest 8
+      </span>
+    </div>
+  </div>
 
-            <span className="rounded-full bg-surface-subtle px-2.5 py-1 text-[11px] font-medium text-ink-muted">
-              Latest 8
-            </span>
-          </div>
+  {issuesStatus === "loading" && (
+    <div className="space-y-4 p-5" aria-label="Loading issues">
+      {[0, 1, 2, 3].map((item) => (
+        <div
+          key={item}
+          className="h-10 animate-pulse rounded bg-surface-subtle"
+        />
+      ))}
+    </div>
+  )}
 
-          {issuesStatus === "loading" && (
-            <div className="space-y-4 p-5" aria-label="Loading issues">
-              {[0, 1, 2, 3].map((item) => (
-                <div
-                  key={item}
-                  className="h-10 animate-pulse rounded bg-surface-subtle"
-                />
-              ))}
-            </div>
-          )}
+  {issuesStatus === "error" && (
+    <div className="flex items-center gap-3 px-5 py-8 text-sm text-ink-muted">
+      <RefreshCw size={16} />
+      Issues couldn't be loaded. The project itself is available.
+    </div>
+  )}
 
-          {issuesStatus === "error" && (
-            <div className="flex items-center gap-3 px-5 py-8 text-sm text-ink-muted">
-              <RefreshCw size={16} />
-              Issues couldn't be loaded. The project itself is available.
-            </div>
-          )}
+  {issuesStatus === "ready" && issues.length === 0 && (
+    <div className="flex min-h-48 flex-col items-center justify-center px-6 py-8 text-center">
+      <span className="grid h-10 w-10 place-items-center rounded-xl bg-surface-subtle text-ink-muted">
+        <CircleDot size={19} />
+      </span>
 
-          {issuesStatus === "ready" && issues.length === 0 && (
-            <div className="flex min-h-48 flex-col items-center justify-center px-6 py-8 text-center">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-surface-subtle text-ink-muted">
-                <CircleDot size={19} />
-              </span>
+      <p className="mt-3 text-sm font-medium text-ink">
+        No issues yet
+      </p>
 
-              <p className="mt-3 text-sm font-medium text-ink">
-                No issues yet
-              </p>
+      <p className="mt-1 max-w-xs text-xs leading-5 text-ink-muted">
+        When work is added to this project, the latest issues will appear here.
+      </p>
+    </div>
+  )}
 
-              <p className="mt-1 max-w-xs text-xs leading-5 text-ink-muted">
-                When work is added to this project, the latest issues will appear here.
-              </p>
-            </div>
-          )}
-
-          {issuesStatus === "ready" && issues.length > 0 && (
-            <div>
-              {issues.map((issue) => (
-                <IssueRow
-                  key={issue._id || issue.id}
-                  issue={issue}
-                />
-              ))}
-            </div>
-          )}
-        </section>
+  {issuesStatus === "ready" && issues.length > 0 && (
+    <div>
+      {issues.map((issue) => (
+        <IssueRow
+          key={issue._id || issue.id}
+          issue={issue}
+        />
+      ))}
+    </div>
+  )}
+</section>
 
         {/* Project details */}
         <aside className="space-y-4">

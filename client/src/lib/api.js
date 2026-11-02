@@ -1,8 +1,11 @@
 // API client. The access token lives in memory only; the refresh token is the
 // HttpOnly cookie (credentials: "include"). On a 401 for an authenticated
 // request we refresh once and retry, so pages never deal with token expiry.
-const BASE = `${import.meta.env.VITE_API_URL || "http://10.89.158.1:5000"}/api`;
+const API_ORIGIN =
+  import.meta.env.VITE_API_URL ||
+  `${window.location.protocol}//${window.location.hostname}:5000`;
 
+const BASE = `${API_ORIGIN}/api`;
 export class ApiError extends Error {
   constructor(message, status, fieldErrors = {}) {
     super(message);
@@ -181,4 +184,66 @@ export const getProjectIssues = (projectId, params = {}) => {
 // Response: { data: { project, role } }
 export const getProject = (projectId) =>
   request(`/projects/${projectId}`).then((r) => r.data);
+
+
+
+// Get one issue
+export const getIssue = (issueId) =>
+  request(`/issues/${issueId}`).then((r) => r.data);
+
+// Update issue fields
+export const updateIssue = (projectId, issueId, payload) =>
+  request(`/projects/${projectId}/issues/${issueId}`, {
+    method: "PATCH",
+    body: payload,
+  }).then((r) => r.data);
+
+// Get issue comments
+export const getIssueComments = (projectId, issueId, params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+
+  return request(
+    `/projects/${projectId}/issues/${issueId}/comments${qs ? `?${qs}` : ""}`
+  ).then((r) => ({
+    items: r.data ?? [],
+    pagination: r.pagination ?? null,
+  }));
+};
+
+// Add a comment
+export const createIssueComment = (projectId, issueId, body) =>
+  request(`/projects/${projectId}/issues/${issueId}/comments`, {
+    method: "POST",
+    body: { body },
+  }).then((r) => r.data);
+
+// Edit a comment
+export const updateIssueComment = (
+  projectId,
+  issueId,
+  commentId,
+  body
+) =>
+  request(
+    `/projects/${projectId}/issues/${issueId}/comments/${commentId}`,
+    {
+      method: "PATCH",
+      body: { body },
+    }
+  ).then((r) => r.data);
+
+// Delete a comment
+export const deleteIssueComment = (projectId, issueId, commentId) =>
+  request(
+    `/projects/${projectId}/issues/${issueId}/comments/${commentId}`,
+    { method: "DELETE" }
+  ).then((r) => r.data);
+
+// Get issue activity history
+export const getIssueActivities = (issueId) =>
+  request(`/issues/${issueId}/activities`).then((r) => r.data ?? []);
+
+
+
+
 
