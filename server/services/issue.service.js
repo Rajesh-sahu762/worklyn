@@ -346,7 +346,12 @@ const updateIssue = async ({
     }
     const members = await TeamMember.find({ team: updates.assigneeTeam, status: "ACTIVE" }).select("user").lean();
     const memberIds = members.map(member => member.user);
-    const eligible = memberIds.length ? await ProjectMember.countDocuments({ project: projectId, user: { $in: memberIds }, status: "ACTIVE" }) : 0;
+    const [projectEligible, orgEligible] = memberIds.length ? await Promise.all([
+      ProjectMember.find({ project: projectId, user: { $in: memberIds }, status: "ACTIVE" }).select("user").lean(),
+      OrganizationMember.find({ organization: issue.organization, user: { $in: memberIds }, status: "ACTIVE" }).select("user").lean(),
+    ]) : [[], []];
+    const activeOrgIds = new Set(orgEligible.map(member => String(member.user)));
+    const eligible = projectEligible.filter(member => activeOrgIds.has(String(member.user))).length;
     if (!eligible) {
       const error = new Error("Selected team has no active project members"); error.statusCode = 400; throw error;
     }
