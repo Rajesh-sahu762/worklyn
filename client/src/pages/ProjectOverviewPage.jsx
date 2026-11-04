@@ -342,6 +342,9 @@ export default function ProjectOverviewPage() {
         <Link to={`/projects/${projectId}/board`} className="inline-flex min-h-9 items-center gap-2 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink transition hover:bg-surface-subtle">
           <Layers3 size={15} /> Board
         </Link>
+        {project?.projectType === "SCRUM" && <Link to={`/projects/${projectId}/sprints`} className="inline-flex min-h-9 items-center gap-2 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink transition hover:bg-surface-subtle">
+          <CalendarDays size={15} /> Sprints
+        </Link>}
 <Link to={`/projects/${projectId}/backlog`} className="inline-flex min-h-9 items-center gap-2 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink transition hover:bg-surface-subtle">
           <Layers3 size={15} /> Backlog
         </Link>
