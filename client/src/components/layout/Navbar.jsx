@@ -41,7 +41,9 @@ export default function Navbar({ onOpenMenu, onOpenSearch }) {
       ? "Project backlog"
       : pathname.endsWith("/members")
         ? "Project members"
-        : pathname.startsWith("/projects/")
+        : pathname.endsWith("/settings")
+          ? "Project settings"
+          : pathname.startsWith("/projects/")
       ? "Project overview"
       : "");
 
