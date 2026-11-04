@@ -2,6 +2,7 @@ const {
   createOrganizationInvitation,
   acceptOrganizationInvitation,
   cancelOrganizationInvitation,
+  getOrganizationInvitations,
   resendOrganizationInvitation
 } = require("../services/organizationInvitation.service");
 
