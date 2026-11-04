@@ -212,6 +212,23 @@ export const updateProjectMemberRole = (projectId, memberId, role) =>
 export const removeProjectMember = (projectId, memberId) =>
   request(`/projects/${projectId}/members/${memberId}`, { method: "DELETE" });
 
+// Notifications
+export const getNotifications = (page = 1, limit = 20) =>
+  request(`/notifications?page=${page}&limit=${limit}`).then((r) => ({
+    notifications: r.data ?? [],
+    unreadCount: r.unreadCount ?? 0,
+    pagination: r.pagination,
+  }));
+
+export const getUnreadNotificationCount = () =>
+  request("/notifications/unread-count").then((r) => r.data.unreadCount ?? 0);
+
+export const markNotificationRead = (notificationId) =>
+  request(`/notifications/${notificationId}/read`, { method: "PATCH" });
+
+export const markAllNotificationsRead = () =>
+  request("/notifications/read-all", { method: "PATCH" }).then((r) => r.data.updated ?? 0);
+
 // Project sprint planning
 export const getSprints = (projectId) =>
   request(`/projects/${projectId}/sprints`).then((r) => r.data.sprints ?? []);
