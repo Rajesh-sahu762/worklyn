@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import {
   ArrowLeft,
+  BarChart3,
   CalendarDays,
   CircleDot,
   FolderKanban,
@@ -356,6 +357,9 @@ export default function ProjectOverviewPage() {
         </Link>
         <Link to={`/projects/${projectId}/settings`} className="inline-flex min-h-9 items-center gap-2 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink transition hover:bg-surface-subtle">
           <FolderKanban size={15} /> Settings
+        </Link>
+        <Link to={`/projects/${projectId}/reports`} className="inline-flex min-h-9 items-center gap-2 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink transition hover:bg-surface-subtle">
+          <BarChart3 size={15} /> Reports
         </Link>
       </div>
 
