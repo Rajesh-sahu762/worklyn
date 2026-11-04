@@ -109,6 +109,13 @@ export default function OrganizationMembersPage() {
   }, [orgId, key]);
 
   useEffect(() => {
+    setHistoryPage(1);
+    setHistory({ items: [], pagination: { page: 1, limit: 5, total: 0, totalPages: 1 } });
+    setFreshLinks({});
+    setActiveTab("members");
+  }, [orgId]);
+
+  useEffect(() => {
     if (!orgId || !canInvite) return;
     let cancelled = false;
     setHistoryStatus("loading");
