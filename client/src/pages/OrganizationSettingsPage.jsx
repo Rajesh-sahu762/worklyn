@@ -18,7 +18,7 @@ const MAX_DESCRIPTION = 500;
 function MemberAvatar({ member }) {
   const user = member.user && typeof member.user === "object" ? member.user : {};
   const name = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email || "Member";
-  const initials = name.split(/\\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+  const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   return (
     <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-line bg-surface-subtle text-xs font-semibold text-ink">
       {user.profileImage ? <img src={user.profileImage} alt="" className="h-full w-full object-cover" /> : initials || "M"}
