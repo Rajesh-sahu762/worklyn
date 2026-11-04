@@ -337,6 +337,15 @@ export default function ProjectOverviewPage() {
       </section>
 
       {/* Main content */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Link to={`/projects/${projectId}/backlog`} className="inline-flex min-h-9 items-center gap-2 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink transition hover:bg-surface-subtle">
+          <Layers3 size={15} /> Backlog
+        </Link>
+        <Link to={`/projects/${projectId}/issues`} className="inline-flex min-h-9 items-center gap-2 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink transition hover:bg-surface-subtle">
+          <CircleDot size={15} /> All issues
+        </Link>
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
 
         {/* Recent issues */}
