@@ -1,7 +1,7 @@
 
 import { useRef, useState } from "react";
+import { Link } from "react-router";
 import { useAuth } from "../../context/AuthContext";
-import { FEATURES } from "../../lib/features";
 import { isMac } from "../../lib/platform";
 import useDismiss from "../../lib/useDismiss";
 import {
@@ -138,38 +138,21 @@ export default function UserMenu() {
               </div>
             )}
 
-            {/* Mobile only: Settings */}
-            <button
-              type="button"
-              role="menuitem"
-              aria-expanded={mobilePanel === "settings"}
-              onClick={() => togglePanel("settings")}
-              className={menuItem}
-            >
-              <SettingsIcon className="shrink-0 text-ink-muted" />
-
-              <span className="flex-1 text-left">
-                Settings
-              </span>
-
-              <span className="text-xs text-ink-faint">
-                {mobilePanel === "settings" ? "−" : "+"}
-              </span>
-            </button>
-
-            {mobilePanel === "settings" && (
-              <div className="mx-3 mb-2 rounded-control bg-surface-subtle p-3">
-                <p className="text-xs leading-relaxed text-ink-muted">
-                  {FEATURES.settings
-                    ? "Settings are available."
-                    : "Personal and organization settings are not available yet."}
-                </p>
-              </div>
-            )}
-
             <div className="my-1 h-px bg-line" />
 
           </div>
+
+          <Link
+            to="/settings/profile"
+            role="menuitem"
+            onClick={() => { setOpen(false); setMobilePanel(null); }}
+            className={menuItem}
+          >
+            <SettingsIcon className="shrink-0 text-ink-muted" />
+            <span className="flex-1">Profile & preferences</span>
+          </Link>
+
+          <div className="my-1 h-px bg-line" />
 
           {/* Sign out */}
           <button
