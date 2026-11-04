@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Issue = require("../models/Issue");
 const IssueComment = require("../models/IssueComment");
+const { createNotifications } = require("./notification.service");
 
 const createHttpError = (message, statusCode) => {
   const error = new Error(message);
@@ -17,7 +18,7 @@ const ensureIssueExists = async (issueId, projectId) => {
     _id: issueId,
     project: projectId,
     archivedAt: null,
-  }).select("_id organization project");
+  }).select("_id organization project reporter assignee issueKey");
 
   if (!issue) {
     throw createHttpError("Issue not found", 404);
@@ -41,6 +42,16 @@ const createComment = async ({
     author: authorId,
     body,
   });
+
+  await createNotifications([issue.reporter, issue.assignee].map((recipientId) => ({
+    recipientId,
+    actorId: authorId,
+    organizationId: issue.organization,
+    projectId: issue.project,
+    issueId: issue._id,
+    type: "ISSUE_COMMENTED",
+    message: `${issue.issueKey} has a new comment`,
+  })));
 
   return IssueComment.findById(comment._id)
     .populate("author", "firstName lastName profileImage")
