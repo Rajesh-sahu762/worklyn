@@ -3,6 +3,8 @@ const validateCreateProject = ({
   key,
   slug,
   projectType,
+  lead,
+  teamIds,
 }) => {
   const errors = {};
 
@@ -37,6 +39,8 @@ const validateCreateProject = ({
       "Project type must be SCRUM or KANBAN";
   }
 
+  if (lead !== undefined && (typeof lead !== "string" || !/^[a-f\\d]{24}$/i.test(lead))) errors.lead = "Invalid project lead";
+  if (teamIds !== undefined && (!Array.isArray(teamIds) || teamIds.length > 50 || teamIds.some((id) => typeof id !== "string" || !/^[a-f\\d]{24}$/i.test(id)) || new Set(teamIds).size !== teamIds.length)) errors.teamIds = "Select up to 50 valid, unique teams";
   return errors;
 };
 
