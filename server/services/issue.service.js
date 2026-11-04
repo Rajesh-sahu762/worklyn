@@ -183,6 +183,8 @@ const getIssueById = async ({ issueId, userId }) => {
   })
     .populate("reporter", "firstName lastName email profileImage")
     .populate("assignee", "firstName lastName email profileImage")
+    .populate("assigneeTeam", "name")
+    .populate("sprint", "name status")
     .populate("parentIssue", "issueKey title type status")
     .lean();
 
@@ -238,6 +240,7 @@ const updateIssue = async ({
     "priority",
     "type",
     "assignee",
+    "assigneeTeam",
     "labels",
     "dueDate",
     "estimate",
@@ -329,6 +332,24 @@ const updateIssue = async ({
     }
   }
 
+  if (updates.assigneeTeam !== undefined && updates.assigneeTeam !== null && updates.assigneeTeam !== "") {
+    if (!mongoose.isValidObjectId(updates.assigneeTeam)) {
+      const error = new Error("Invalid team ID"); error.statusCode = 400; throw error;
+    }
+    const project = await Project.findOne({ _id: projectId, status: "ACTIVE" }).select("organization teams").lean();
+    const attached = (project?.teams || []).some(id => String(id) === String(updates.assigneeTeam));
+    const team = await Team.findOne({ _id: updates.assigneeTeam, organization: issue.organization, isActive: true });
+    if (!attached || !team) {
+      const error = new Error("Team must be active and assigned to this project"); error.statusCode = 400; throw error;
+    }
+    const members = await TeamMember.find({ team: updates.assigneeTeam, status: "ACTIVE" }).select("user").lean();
+    const memberIds = members.map(member => member.user);
+    const eligible = memberIds.length ? await ProjectMember.countDocuments({ project: projectId, user: { $in: memberIds }, status: "ACTIVE" }) : 0;
+    if (!eligible) {
+      const error = new Error("Selected team has no active project members"); error.statusCode = 400; throw error;
+    }
+  }
+
   // 6. Normalize values for accurate activity comparison
   const normalize = (value) => {
     if (value === null || value === undefined) {
@@ -356,7 +377,7 @@ const updateIssue = async ({
   for (const field of fields) {
     let newValue = updates[field];
 
-    if (field === "assignee" && (newValue === "" || newValue === null)) {
+    if ((field === "assignee" || field === "assigneeTeam") && (newValue === "" || newValue === null)) {
       newValue = null;
     }
 
@@ -382,7 +403,7 @@ const updateIssue = async ({
   for (const field of fields) {
     let value = updates[field];
 
-    if (field === "assignee" && (value === "" || value === null)) {
+    if ((field === "assignee" || field === "assigneeTeam") && (value === "" || value === null)) {
       value = null;
     }
 
@@ -391,6 +412,8 @@ const updateIssue = async ({
     }
 
     issue[field] = value;
+    if (field === "assignee" && value) issue.assigneeTeam = null;
+    if (field === "assigneeTeam" && value) issue.assignee = null;
   }
 
   await issue.save();
@@ -426,6 +449,12 @@ const updateIssue = async ({
         message: `${issue.issueKey} moved to ${issue.status.replaceAll("_", " ").toLowerCase()}`,
       });
     }
+  }
+  if (changes.some((change) => change.field === "assigneeTeam") && issue.assigneeTeam) {
+    const members = await TeamMember.find({ team: issue.assigneeTeam, status: "ACTIVE" }).select("user").lean();
+    const ids = members.map(member => member.user);
+    const projectMembers = ids.length ? await ProjectMember.find({ project: projectId, user: { $in: ids }, status: "ACTIVE" }).select("user").lean() : [];
+    for (const member of projectMembers) notifications.push({ recipientId: member.user, actorId: userId, organizationId: issue.organization, projectId: issue.project, issueId: issue._id, type: "ISSUE_ASSIGNED", message: `Your team was assigned ${issue.issueKey}` });
   }
   if (changes.some((change) => change.field === "assignee") && issue.assignee) {
     notifications.push({
