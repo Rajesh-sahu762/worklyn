@@ -10,7 +10,7 @@ const PRIORITY = {
   HIGH: "text-priority-high",
   HIGHEST: "text-danger",
 };
-const label = (value = "") => String(value).toLowerCase().replaceAll("_", " ").replace(/^\\w/, (letter) => letter.toUpperCase());
+const label = (value = "") => String(value).toLowerCase().replaceAll("_", " ").replace(/^\w/, (letter) => letter.toUpperCase());
 const issueId = (issue) => issue._id ?? issue.id;
 
 export default function ProjectBacklogPage() {
