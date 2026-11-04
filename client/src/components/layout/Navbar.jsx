@@ -1,5 +1,5 @@
 
-import { useLocation } from "react-router";
+import { Link, useLocation } from "react-router";
 import { useOrganization } from "../../context/OrganizationContext";
 import { FEATURES } from "../../lib/features";
 import CreateMenu from "./CreateMenu";
@@ -19,6 +19,7 @@ const TITLES = {
   "/organizations/new": "New organization",
   "/projects": "Projects",
   "/members": "Members",
+  "/notifications": "Notifications",
   "/teams": "Teams",
   "/projects/:projectId/backlog": "Project backlog",
   "/projects/:projectId/board": "Project board",
@@ -147,11 +148,13 @@ export default function Navbar({ onOpenMenu, onOpenSearch }) {
           label="Notifications"
           title="Notifications"
         >
-          {FEATURES.notifications ? null : (
-            <p>
-              Mentions and assignment changes will show up here once
-              notifications are available.
-            </p>
+          {FEATURES.notifications ? (
+            <div>
+              <p>Your issue assignments, status updates and comments.</p>
+              <Link to="/notifications" className="mt-3 inline-flex text-xs font-semibold text-accent-support hover:underline">Open notification inbox</Link>
+            </div>
+          ) : (
+            <p>Mentions and assignment changes will show up here once notifications are available.</p>
           )}
         </NavPopover>
 
