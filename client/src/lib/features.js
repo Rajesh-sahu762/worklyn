@@ -11,5 +11,5 @@ export const FEATURES = {
   createIssue: false,
   createProject: false,
   createOrganization: true,
-  settings: false,
+  settings: true,
 };
