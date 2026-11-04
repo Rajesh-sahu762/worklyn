@@ -4,7 +4,7 @@ const User = require("../models/user");
 const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization || "";
-    const tokenMatch = /^Bearer\\s+(\\S+)$/i.exec(authHeader);
+    const tokenMatch = /^Bearer +([^ ]+)$/i.exec(authHeader);
 
     if (!tokenMatch) {
       return res.status(401).json({
