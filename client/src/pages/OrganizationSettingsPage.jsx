@@ -28,7 +28,7 @@ function MemberAvatar({ member }) {
 
 export default function OrganizationSettingsPage() {
   const navigate = useNavigate();
-  const { currentOrg, reloadOrgs, switchOrg } = useOrganization();
+  const { currentOrg, reloadOrgs } = useOrganization();
   const orgId = currentOrg?.id;
   const isOwner = currentOrg?.role === "OWNER";
   const canEdit = isOwner || currentOrg?.role === "ADMIN";
