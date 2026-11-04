@@ -153,6 +153,16 @@ export const getMe = (token) =>
 // POST /api/auth/logout (cookie, no bearer needed)
 export const logout = () => request("/auth/logout", { method: "POST" });
 
+/* ---------- profile & preferences ---------- */
+export const updateProfile = (payload) =>
+  request("/profile", { method: "PATCH", body: payload }).then((r) => r.data.user);
+
+export const updateNotificationPreferences = (notifications) =>
+  request("/profile/preferences", {
+    method: "PATCH",
+    body: { notifications },
+  }).then((r) => r.data.preferences);
+
 /* ---------- organizations & projects ---------- */
 // GET /api/organization/my -> { data: { organizations: [...] } }
 export const getMyOrganizations = () =>
