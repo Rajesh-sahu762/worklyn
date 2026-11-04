@@ -1,6 +1,7 @@
 const {
   createProject,
   getProjectById,
+  updateProject,
   getUserProjects,
   getProjectMembers,
   addProjectMember,
@@ -97,6 +98,48 @@ const getProjectDetailsController = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch project details",
+    });
+  }
+};
+
+const updateProjectController = async (req, res) => {
+  const allowed = ["name", "description", "avatar"];
+  const fields = Object.keys(req.body ?? {});
+  const errors = {};
+
+  if (!fields.length || fields.some((field) => !allowed.includes(field))) {
+    return res.status(400).json({
+      success: false,
+      message: "Provide valid project fields to update",
+    });
+  }
+  if (req.body.name !== undefined && (typeof req.body.name !== "string" || req.body.name.trim().length < 2 || req.body.name.trim().length > 100)) {
+    errors.name = "Project name must be between 2 and 100 characters";
+  }
+  if (req.body.description !== undefined && (typeof req.body.description !== "string" || req.body.description.length > 1000)) {
+    errors.description = "Description cannot exceed 1000 characters";
+  }
+  if (req.body.avatar !== undefined && typeof req.body.avatar !== "string") {
+    errors.avatar = "Avatar must be a URL string";
+  }
+  if (Object.keys(errors).length) {
+    return res.status(400).json({ success: false, message: "Validation failed", errors });
+  }
+
+  try {
+    const project = await updateProject({
+      projectId: req.project._id,
+      updates: req.body,
+    });
+    return res.status(200).json({
+      success: true,
+      message: "Project updated successfully",
+      data: { project },
+    });
+  } catch (error) {
+    return res.status(error.message === "Project not found" ? 404 : 500).json({
+      success: false,
+      message: error.message || "Failed to update project",
     });
   }
 };
@@ -257,6 +300,7 @@ const removeProjectMemberController = async (req, res) => {
 module.exports = {
   createProjectController,
   getProjectDetailsController,
+  updateProjectController,
   getMyProjectsController,
   getProjectMembersController,
   addProjectMemberController,
