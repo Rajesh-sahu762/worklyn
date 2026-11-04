@@ -10,6 +10,7 @@ const invitationRoutes = require("./routes/invitation.route");
 const teamRoutes = require("./routes/team.routes");
 const sprintRoutes = require("./routes/sprint.routes");
 const notificationRoutes = require("./routes/notification.routes");
+const reportRoutes = require("./routes/report.routes");
 const app = express();
 
 var corsOptions = {
@@ -31,4 +32,5 @@ app.use("/api", issueCommentRoutes);
 app.use("/api", teamRoutes);
 app.use("/api", sprintRoutes);
 app.use("/api", notificationRoutes);
+app.use("/api", reportRoutes);
 module.exports = app;
