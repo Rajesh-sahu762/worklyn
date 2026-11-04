@@ -25,22 +25,23 @@ const PRIORITY = {
 const issueId = (issue) => issue._id ?? issue.id;
 const label = (value = "") => String(value).toLowerCase().replaceAll("_", " ").replace(/^\w/, (letter) => letter.toUpperCase());
 
-function IssueCard({ issue, projectId, onMove, moving, onDragStart }) {
+function IssueCard({ issue, projectId, onMove, moving, onDragStart, canMove }) {
   const assignee = issue.assignee && typeof issue.assignee === "object"
     ? [issue.assignee.firstName, issue.assignee.lastName].filter(Boolean).join(" ") || issue.assignee.email
     : "Unassigned";
   const available = TRANSITIONS[issue.status] ?? [];
-  return <article draggable onDragStart={(event) => onDragStart(event, issue)} className="group rounded-xl border border-line bg-surface p-3.5 shadow-sm transition hover:border-ink-faint/60 hover:shadow-md active:cursor-grabbing">
+  return <article draggable={canMove} onDragStart={(event) => onDragStart(event, issue)} className="group rounded-xl border border-line bg-surface p-3.5 shadow-sm transition hover:border-ink-faint/60 hover:shadow-md active:cursor-grabbing">
     <div className="flex items-start justify-between gap-2"><span className="font-mono text-[10px] font-semibold tracking-wide text-ink-faint">{issue.issueKey ?? "ISSUE"}</span><span className={`text-[10px] font-semibold ${PRIORITY[issue.priority] ?? "text-ink-muted"}`}>{label(issue.priority ?? "MEDIUM")}</span></div>
     <Link to={`/projects/${projectId}/issues/${issueId(issue)}`} className="mt-2 block text-sm font-semibold leading-5 text-ink hover:text-accent-support">{issue.title}</Link>
     <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3"><span className="max-w-[65%] truncate text-[11px] text-ink-muted">{assignee}</span><span className="text-[10px] text-ink-faint">{label(issue.type ?? "TASK")}</span></div>
-    {available.length > 0 && <label className="mt-3 block"><span className="sr-only">Move {issue.issueKey} to another status</span><select aria-label={`Move ${issue.issueKey} to status`} value="" disabled={moving} onChange={(event) => event.target.value && onMove(issue, event.target.value)} className="h-8 w-full rounded-control border border-line bg-canvas px-2 text-[11px] text-ink-muted outline-none focus:border-accent-support disabled:opacity-50"><option value="">Move to…</option>{available.map((status) => <option key={status} value={status}>{label(status)}</option>)}</select></label>}
+    {canMove && available.length > 0 && <label className="mt-3 block"><span className="sr-only">Move {issue.issueKey} to another status</span><select aria-label={`Move ${issue.issueKey} to status`} value="" disabled={moving} onChange={(event) => event.target.value && onMove(issue, event.target.value)} className="h-8 w-full rounded-control border border-line bg-canvas px-2 text-[11px] text-ink-muted outline-none focus:border-accent-support disabled:opacity-50"><option value="">Move to…</option>{available.map((status) => <option key={status} value={status}>{label(status)}</option>)}</select></label>}
   </article>;
 }
 
 export default function ProjectBoardPage() {
   const { projectId } = useParams();
   const [project, setProject] = useState(null);
+  const [projectRole, setProjectRole] = useState(null);
   const [issues, setIssues] = useState([]);
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
@@ -58,6 +59,7 @@ export default function ProjectBoardPage() {
         ...COLUMNS.map((column) => getProjectIssues(projectId, { status: column.id, limit: 100 })),
       ]);
       setProject(projectResult?.project ?? projectResult);
+      setProjectRole(projectResult?.role ?? null);
       setIssues(columns.flat().filter((issue) => issue && issue.status !== "BACKLOG"));
       setStatus("ready");
     } catch (err) {
@@ -67,6 +69,8 @@ export default function ProjectBoardPage() {
   }, [projectId]);
 
   useEffect(() => { load(); }, [load]);
+
+  const canMove = projectRole !== "VIEWER";
 
   const grouped = useMemo(() => Object.fromEntries(COLUMNS.map((column) => [column.id, issues.filter((issue) => issue.status === column.id)])), [issues]);
 
@@ -113,9 +117,10 @@ export default function ProjectBoardPage() {
     <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-4">
       {COLUMNS.map((column) => <section key={column.id} onDragOver={(event) => { event.preventDefault(); setDragOver(column.id); }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setDragOver(null); }} onDrop={(event) => onDrop(event, column.id)} className={`min-h-[420px] rounded-panel border p-3 transition-colors ${dragOver === column.id ? "border-accent-support bg-accent-support/5" : "border-line bg-canvas"}`}>
         <header className="mb-3 flex items-center justify-between gap-2 px-1"><div className="flex min-w-0 items-center gap-2"><span className={`h-2.5 w-2.5 shrink-0 rounded-full ${column.color}`} /><h2 className="truncate text-sm font-semibold text-ink">{column.title}</h2><span className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-semibold tabular-nums text-ink-muted">{grouped[column.id].length}</span></div><CircleDot size={15} className="text-ink-faint" /></header>
-        <div className="space-y-2.5">{grouped[column.id].length === 0 ? <div className="rounded-xl border border-dashed border-line px-3 py-8 text-center text-xs text-ink-faint">Drop an issue here</div> : grouped[column.id].map((issue) => <IssueCard key={issueId(issue)} issue={issue} projectId={projectId} onMove={moveIssue} moving={movingId === issueId(issue)} onDragStart={onDragStart} />)}</div>
+        <div className="space-y-2.5">{grouped[column.id].length === 0 ? <div className="rounded-xl border border-dashed border-line px-3 py-8 text-center text-xs text-ink-faint">Drop an issue here</div> : grouped[column.id].map((issue) => <IssueCard key={issueId(issue)} issue={issue} projectId={projectId} onMove={moveIssue} moving={movingId === issueId(issue)} onDragStart={onDragStart} canMove={canMove} />)}</div>
       </section>)}
     </div>
+    {!canMove && <p className="text-xs text-ink-faint">You have viewer access. Issue movement is disabled.</p>}
     <p className="text-xs text-ink-faint">Showing up to 100 issues per workflow column. Backlog issues are managed separately. Status transitions follow the project's configured workflow rules.</p>
   </div>;
 }
