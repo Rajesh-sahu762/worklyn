@@ -19,6 +19,7 @@ const TITLES = {
   "/organizations/new": "New organization",
   "/projects": "Projects",
   "/members": "Members",
+  "/settings/organization": "Organization settings",
   "/invitations/accept": "Accept invitation"
 };
 
