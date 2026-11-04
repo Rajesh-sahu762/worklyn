@@ -89,6 +89,12 @@ const issueSchema = new mongoose.Schema(
       required: true,
     },
 
+    assigneeTeam: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Team",
+      default: null,
+    },
+
     assignee: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
