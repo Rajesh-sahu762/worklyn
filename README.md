@@ -475,3 +475,22 @@ Source changes are committed. No local build, lint, automated tests or live API/
 - Project VIEWER users cannot move issues in the board UI; backend viewer restrictions remain authoritative.
 - Backlog remains a separate planning view and is linked from the board.
 - Current board fetches at most 100 issues per workflow column. Server-side pagination/virtualization is a future scalability improvement.
+
+## 25. Scrum sprint planning implementation — 4 November 2026
+
+### Backend
+- Added the `Sprint` model with PLANNED, ACTIVE and COMPLETED lifecycle states, optional goal/date fields, creator and a partial unique index that permits at most one ACTIVE sprint per project.
+- Added sprint APIs for listing, creating, editing planned sprints, starting and completing sprints, and assigning/unassigning issues.
+- Added `Issue.sprint` reference and a project+sprint+status index. Project issue queries accept a validated `sprint` filter; `sprint=none` selects unassigned issues.
+- Only SCRUM projects can create/start sprints. Project admins control sprint lifecycle and issue assignment.
+- Starting a sprint moves its assigned BACKLOG issues to TODO. Completing a sprint returns unfinished issues to BACKLOG and unassigns them; DONE issues retain the completed sprint reference for historical reporting.
+- A project can have only one active sprint. The database partial unique index is the final concurrency guard.
+
+### Frontend
+- Added `/projects/:projectId/sprints` for Scrum projects.
+- Supports create/edit planned sprint, assign backlog issues, start sprint, inspect active sprint work and complete the active sprint.
+- Completing a sprint requires confirmation and explains that unfinished work returns to backlog.
+- Project overview links to sprint planning only for SCRUM projects. Kanban projects are directed to their board instead.
+
+### Verification note
+Source changes are committed. No build, lint, automated integration tests or live MongoDB transaction/index verification has been executed in this editing session. Verify the partial unique index on the deployed MongoDB version and test lifecycle transitions with a project-admin account before production use.
