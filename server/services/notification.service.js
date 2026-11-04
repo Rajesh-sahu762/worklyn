@@ -2,14 +2,24 @@ const Notification = require("../models/Notification");
 const User = require("../models/user");
 
 const createNotifications = async (items = []) => {
-  const candidates = items.filter((item) => item.recipientId && String(item.recipientId) !== String(item.actorId));
+  const candidates = items.filter((item) =>
+    item.recipientId && String(item.recipientId) !== String(item.actorId)
+  );
   if (!candidates.length) return;
-  const recipientIds = [...new Set(candidates.map((item) => String(item.recipientId)))];
-  const users = await User.find({ _id: { $in: recipientIds } }).select("preferences").lean();
-  const preferenceByUser = new Map(users.map((user) => [String(user._id), user.preferences?.notifications ?? {}]));
-  const valid = candidates.filter((item) => preferenceByUser.get(String(item.recipientId))?.[item.type] !== false);
-  if (!valid.length) return;
+
   try {
+    const recipientIds = [...new Set(candidates.map((item) => String(item.recipientId)))];
+    const users = await User.find({ _id: { $in: recipientIds } })
+      .select("preferences")
+      .lean();
+    const preferenceByUser = new Map(
+      users.map((user) => [String(user._id), user.preferences?.notifications ?? {}])
+    );
+    const valid = candidates.filter(
+      (item) => preferenceByUser.get(String(item.recipientId))?.[item.type] !== false
+    );
+    if (!valid.length) return;
+
     await Notification.insertMany(valid.map((item) => ({
       recipient: item.recipientId,
       actor: item.actorId || null,
