@@ -101,6 +101,13 @@ const issueSchema = new mongoose.Schema(
       default: null,
     },
 
+    sprint: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Sprint",
+      default: null,
+      index: true,
+    },
+
     labels: {
       type: [String],
       default: [],
@@ -140,6 +147,8 @@ issueSchema.index(
 );
 
 // Common project board query.
+issueSchema.index({ project: 1, sprint: 1, status: 1 });
+
 issueSchema.index({
   project: 1,
   status: 1,
