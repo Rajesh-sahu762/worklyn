@@ -9,6 +9,7 @@ import {
   Layers3,
   RefreshCw,
   ArrowUpRight,
+  Users,
 } from "lucide-react";
 
 import { getProject, getProjectIssues } from "../lib/api";
@@ -343,6 +344,9 @@ export default function ProjectOverviewPage() {
         </Link>
         <Link to={`/projects/${projectId}/issues`} className="inline-flex min-h-9 items-center gap-2 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink transition hover:bg-surface-subtle">
           <CircleDot size={15} /> All issues
+        </Link>
+        <Link to={`/projects/${projectId}/members`} className="inline-flex min-h-9 items-center gap-2 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink transition hover:bg-surface-subtle">
+          <Users size={15} /> Members
         </Link>
       </div>
 
