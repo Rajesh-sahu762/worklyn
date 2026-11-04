@@ -212,6 +212,25 @@ export const updateProjectMemberRole = (projectId, memberId, role) =>
 export const removeProjectMember = (projectId, memberId) =>
   request(`/projects/${projectId}/members/${memberId}`, { method: "DELETE" });
 
+// Project sprint planning
+export const getSprints = (projectId) =>
+  request(`/projects/${projectId}/sprints`).then((r) => r.data.sprints ?? []);
+
+export const createSprint = (projectId, payload) =>
+  request(`/projects/${projectId}/sprints`, { method: "POST", body: payload }).then((r) => r.data.sprint);
+
+export const updateSprint = (projectId, sprintId, payload) =>
+  request(`/projects/${projectId}/sprints/${sprintId}`, { method: "PATCH", body: payload }).then((r) => r.data.sprint);
+
+export const startSprint = (projectId, sprintId) =>
+  request(`/projects/${projectId}/sprints/${sprintId}/start`, { method: "POST" }).then((r) => r.data.sprint);
+
+export const completeSprint = (projectId, sprintId) =>
+  request(`/projects/${projectId}/sprints/${sprintId}/complete`, { method: "POST" }).then((r) => r.data.sprint);
+
+export const assignIssueToSprint = (projectId, issueId, sprintId) =>
+  request(`/projects/${projectId}/issues/${issueId}/sprint`, { method: "PATCH", body: { sprintId } }).then((r) => r.data.issue);
+
 // Organization teams
 export const getTeams = (organizationId) =>
   request(`/organizations/${organizationId}/teams`).then((r) => r.data.teams ?? []);
