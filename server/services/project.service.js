@@ -3,94 +3,63 @@ const mongoose = require("mongoose");
 const Project = require("../models/Project");
 const ProjectMember = require("../models/ProjectMember");
 const OrganizationMember = require("../models/OrganizationMember");
+const Team = require("../models/Team");
+const TeamMember = require("../models/TeamMember");
 const createProject = async ({
-  organizationId,
-  name,
-  key,
-  slug,
-  description,
-  projectType,
-  lead,
-  createdBy,
+  organizationId, name, key, slug, description, projectType, lead, teamIds = [], createdBy,
 }) => {
   const session = await mongoose.startSession();
-
   try {
     session.startTransaction();
-
-    // 1. Check duplicate project key
-    const existingKey = await Project.findOne({
-      organization: organizationId,
-      key: key.toUpperCase(),
+    const normalizedLead = lead || createdBy;
+    const leadMembership = await OrganizationMember.findOne({
+      organization: organizationId, user: normalizedLead, status: "ACTIVE",
     }).session(session);
+    if (!leadMembership) throw new Error("Project lead must be an active organization member");
 
-    if (existingKey) {
-      throw new Error("Project key already exists in this organization");
+    const selectedTeams = [...new Set((teamIds || []).map(String))];
+    const teams = selectedTeams.length ? await Team.find({
+      _id: { $in: selectedTeams }, organization: organizationId, isActive: true,
+    }).session(session) : [];
+    if (teams.length !== selectedTeams.length) throw new Error("One or more selected teams are not active in this organization");
+
+    const [existingKey, existingSlug] = await Promise.all([
+      Project.findOne({ organization: organizationId, key: key.toUpperCase() }).session(session),
+      Project.findOne({ organization: organizationId, slug: slug.toLowerCase() }).session(session),
+    ]);
+    if (existingKey) throw new Error("Project key already exists in this organization");
+    if (existingSlug) throw new Error("Project slug already exists in this organization");
+
+    const [createdProject] = await Project.create([{
+      organization: organizationId, name: name.trim(), key: key.toUpperCase().trim(),
+      slug: slug.toLowerCase().trim(), description: description?.trim() || "",
+      projectType: projectType || "SCRUM", lead: normalizedLead, teams: teams.map(t => t._id),
+      createdBy, status: "ACTIVE",
+    }], { session });
+
+    const teamMemberships = selectedTeams.length ? await TeamMember.find({
+      team: { $in: selectedTeams }, status: "ACTIVE",
+    }).session(session).lean() : [];
+    const participantIds = new Set([String(createdBy), String(normalizedLead)]);
+    teamMemberships.forEach(member => participantIds.add(String(member.user)));
+
+    const organizationMembers = await OrganizationMember.find({
+      organization: organizationId, user: { $in: [...participantIds] }, status: "ACTIVE",
+    }).session(session).lean();
+    const activeUserIds = new Set(organizationMembers.map(m => String(m.user)));
+    const projectMembers = [...participantIds].filter(id => activeUserIds.has(id)).map(userId => ({
+      project: createdProject._id, user: userId,
+      role: userId === String(createdBy) ? "PROJECT_ADMIN" : "MEMBER",
+      status: "ACTIVE", joinedAt: new Date(),
+    }));
+    if (!projectMembers.some(m => m.user === String(createdBy))) {
+      throw new Error("Project creator must be an active organization member");
     }
-
-    // 2. Check duplicate project slug
-    const existingSlug = await Project.findOne({
-      organization: organizationId,
-      slug: slug.toLowerCase(),
-    }).session(session);
-
-    if (existingSlug) {
-      throw new Error("Project slug already exists in this organization");
-    }
-
-    // 3. Create project
-    const project = await Project.create(
-      [
-        {
-          organization: organizationId,
-
-          name: name.trim(),
-
-          key: key.toUpperCase().trim(),
-
-          slug: slug.toLowerCase().trim(),
-
-          description: description?.trim() || "",
-
-          projectType: projectType || "SCRUM",
-
-          lead: lead || createdBy,
-
-          createdBy,
-
-          status: "ACTIVE",
-        },
-      ],
-      { session },
-    );
-
-    const createdProject = project[0];
-
-    // 4. Creator automatically becomes project admin
-    await ProjectMember.create(
-      [
-        {
-          project: createdProject._id,
-
-          user: createdBy,
-
-          role: "PROJECT_ADMIN",
-
-          status: "ACTIVE",
-
-          joinedAt: new Date(),
-        },
-      ],
-      { session },
-    );
-
-    // 5. Commit
+    await ProjectMember.insertMany(projectMembers, { session });
     await session.commitTransaction();
-
     return createdProject;
   } catch (error) {
-    await session.abortTransaction();
-
+    if (session.inTransaction()) await session.abortTransaction();
     throw error;
   } finally {
     await session.endSession();
