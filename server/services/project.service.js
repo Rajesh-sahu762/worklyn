@@ -130,6 +130,18 @@ const getProjectById = async (projectId) => {
   return project;
 };
 
+const updateProject = async ({ projectId, updates }) => {
+  const project = await Project.findOne({ _id: projectId, status: "ACTIVE" });
+  if (!project) throw new Error("Project not found");
+
+  if (updates.name !== undefined) project.name = updates.name.trim();
+  if (updates.description !== undefined) project.description = updates.description.trim();
+  if (updates.avatar !== undefined) project.avatar = updates.avatar.trim();
+
+  await project.save();
+  return project;
+};
+
 const getProjectMembers = async (projectId) => {
   return ProjectMember.find({
     project: projectId,
@@ -264,6 +276,7 @@ module.exports = {
   createProject,
   getUserProjects,
   getProjectById,
+  updateProject,
   getProjectMembers,
   addProjectMember,
   updateProjectMemberRole,
