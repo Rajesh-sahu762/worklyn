@@ -339,7 +339,10 @@ export default function ProjectOverviewPage() {
 
       {/* Main content */}
       <div className="flex flex-wrap items-center gap-2">
-        <Link to={`/projects/${projectId}/backlog`} className="inline-flex min-h-9 items-center gap-2 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink transition hover:bg-surface-subtle">
+        <Link to={`/projects/${projectId}/board`} className="inline-flex min-h-9 items-center gap-2 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink transition hover:bg-surface-subtle">
+          <Layers3 size={15} /> Board
+        </Link>
+<Link to={`/projects/${projectId}/backlog`} className="inline-flex min-h-9 items-center gap-2 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink transition hover:bg-surface-subtle">
           <Layers3 size={15} /> Backlog
         </Link>
         <Link to={`/projects/${projectId}/issues`} className="inline-flex min-h-9 items-center gap-2 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink transition hover:bg-surface-subtle">
