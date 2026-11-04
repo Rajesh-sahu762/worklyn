@@ -11,6 +11,7 @@ import ProjectOverviewPage from "../pages/ProjectOverviewPage";
 import ProjectIssuesPage from "../pages/ProjectIssuesPage";
 import IssueDetailPage from "../pages/IssueDetailPage";
 import OrganizationMembersPage from "../pages/OrganizationMembersPage";
+import OrganizationSettingsPage from "../pages/OrganizationSettingsPage";
 import AcceptInvitationPage from "../pages/AcceptInvitationPage";
 
 // Single place for the route table. As the app grows, split into
@@ -44,6 +45,7 @@ export default function AppRoutes() {
             element={<IssueDetailPage />}
           />
           <Route path="/members" element={<OrganizationMembersPage />} />
+          <Route path="/settings/organization" element={<OrganizationSettingsPage />} />
           <Route
             path="/invitations/accept"
             element={<AcceptInvitationPage />}
