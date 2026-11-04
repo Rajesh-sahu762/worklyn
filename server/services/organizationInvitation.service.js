@@ -284,5 +284,6 @@ module.exports = {
   createOrganizationInvitation,
   acceptOrganizationInvitation,
   cancelOrganizationInvitation,
+  getOrganizationInvitations,
   resendOrganizationInvitation
 };
