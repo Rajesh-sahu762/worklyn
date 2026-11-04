@@ -52,6 +52,12 @@ const GROUPS = [
         icon: UsersIcon,
         ready: FEATURES.members,
       },
+      {
+        label: "Organization settings",
+        to: "/settings/organization",
+        icon: SettingsIcon,
+        ready: FEATURES.settings,
+      },
     ],
   },
 ];
