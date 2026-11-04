@@ -213,6 +213,7 @@ const resendInvitation = async (req, res) => {
 
 module.exports = {
   createInvitation,
+  listInvitations,
   acceptInvitation,
   cancelInvitation,
   resendInvitation,
