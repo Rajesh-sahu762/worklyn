@@ -63,6 +63,10 @@ export function AuthProvider({ children }) {
     setStatus("authenticated");
   }, []);
 
+  const updateUser = useCallback((updates) => {
+    setSession((current) => current ? { ...current, user: { ...current.user, ...updates } } : current);
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await apiLogout();
@@ -81,8 +85,9 @@ export function AuthProvider({ children }) {
       accessToken: session?.accessToken ?? null,
       login,
       logout,
+      updateUser,
     }),
-    [status, session, login, logout]
+    [status, session, login, logout, updateUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
