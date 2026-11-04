@@ -4,6 +4,7 @@ const Issue = require("../models/Issue");
 const Project = require("../models/Project");
 const ProjectMember = require("../models/ProjectMember");
 const OrganizationMember = require("../models/OrganizationMember");
+const { createNotifications } = require("./notification.service");
 
 const createIssue = async ({
   projectId,
@@ -121,6 +122,18 @@ const createIssue = async ({
     dueDate: dueDate || null,
     estimate: estimate ?? null,
   });
+
+  if (assigneeId) {
+    await createNotifications([{
+      recipientId: assigneeId,
+      actorId: reporterId,
+      organizationId: issue.organization,
+      projectId: issue.project,
+      issueId: issue._id,
+      type: "ISSUE_ASSIGNED",
+      message: `You were assigned ${issue.issueKey}`,
+    }]);
+  }
 
   return issue;
 };
@@ -448,6 +461,33 @@ const updateIssue = async ({
       changes,
     });
   }
+
+  const notifications = [];
+  if (changes.some((change) => change.field === "status")) {
+    for (const recipientId of [issue.assignee, issue.reporter]) {
+      notifications.push({
+        recipientId,
+        actorId: userId,
+        organizationId: issue.organization,
+        projectId: issue.project,
+        issueId: issue._id,
+        type: "ISSUE_STATUS_CHANGED",
+        message: `${issue.issueKey} moved to ${issue.status.replaceAll("_", " ").toLowerCase()}`,
+      });
+    }
+  }
+  if (changes.some((change) => change.field === "assignee") && issue.assignee) {
+    notifications.push({
+      recipientId: issue.assignee,
+      actorId: userId,
+      organizationId: issue.organization,
+      projectId: issue.project,
+      issueId: issue._id,
+      type: "ISSUE_ASSIGNED",
+      message: `You were assigned ${issue.issueKey}`,
+    });
+  }
+  await createNotifications(notifications);
 
   // 9. Return populated issue
   return Issue.findById(issue._id)
