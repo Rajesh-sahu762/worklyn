@@ -134,6 +134,7 @@ const getProjectIssues = async ({
   priority,
   assignee,
   search,
+  sprint,
 }) => {
   const filter = {
     project: projectId,
@@ -144,6 +145,13 @@ const getProjectIssues = async ({
   if (status) filter.status = status;
   if (type) filter.type = type;
   if (priority) filter.priority = priority;
+
+  if (sprint === "none") {
+    filter.sprint = null;
+  } else if (sprint) {
+    if (!mongoose.isValidObjectId(sprint)) throw new Error("Invalid sprint ID");
+    filter.sprint = sprint;
+  }
 
   if (assignee === "unassigned") {
     filter.assignee = null;
