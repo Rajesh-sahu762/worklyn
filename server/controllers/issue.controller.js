@@ -9,7 +9,11 @@ const {
 
 const createIssueController = async (req, res) => {
   try {
-    const errors = validateCreateIssue(req.body);
+    const allowedFields = ["title", "description", "type", "priority", "status", "assigneeId", "assigneeTeamId", "sprintId", "parentIssueId", "labels", "dueDate", "estimate"];
+    if (Object.keys(req.body || {}).some((field) => !allowedFields.includes(field))) {
+      return res.status(400).json({ success: false, message: "Unknown issue field supplied" });
+    }
+    const errors = validateCreateIssue(req.body || {});
 
     if (Object.keys(errors).length > 0) {
       return res.status(400).json({
@@ -26,6 +30,9 @@ const createIssueController = async (req, res) => {
       description: req.body.description,
       type: req.body.type || "TASK",
       priority: req.body.priority || "MEDIUM",
+      status: req.body.status,
+      assigneeTeamId: req.body.assigneeTeamId,
+      sprintId: req.body.sprintId,
       assigneeId: req.body.assigneeId,
       parentIssueId: req.body.parentIssueId,
       labels: req.body.labels,
@@ -41,6 +48,12 @@ const createIssueController = async (req, res) => {
   } catch (error) {
     const clientErrors = [
       "Project not found",
+      "Invalid team ID",
+      "Team must be active and assigned to this project",
+      "Selected team has no active project members",
+      "Sprint must belong to this project and be active or planned",
+      "Assignee must be an active project and organization member",
+      "Choose an individual or a team, not both",
       "Invalid assignee ID",
       "Assignee must be an active project member",
       "Assignee must be an active organization member",
