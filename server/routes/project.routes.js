@@ -9,6 +9,7 @@ const authorizeProject = require("../middlewares/authorizeProject");
 const {
   getMyProjectsController,
   getProjectDetailsController,
+  getProjectMembersController,
   addProjectMemberController,
   createProjectController,
   updateProjectMemberRoleController,
@@ -39,6 +40,13 @@ router.get(
   getProjectDetailsController,
 );
 
+
+router.get(
+  "/projects/:projectId/members",
+  authenticate,
+  projectAccess,
+  getProjectMembersController
+);
 
 router.post(
     "/projects/:projectId/members",
