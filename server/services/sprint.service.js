@@ -35,6 +35,7 @@ const updateSprint = async ({ projectId, sprintId, updates }) => {
   if (updates.goal !== undefined) sprint.goal = updates.goal.trim();
   if (updates.startDate !== undefined) sprint.startDate = updates.startDate || null;
   if (updates.endDate !== undefined) sprint.endDate = updates.endDate || null;
+  if (sprint.startDate && sprint.endDate && sprint.endDate <= sprint.startDate) throw new Error("Sprint end date must be after its start date");
   await sprint.save();
   return sprint;
 };
@@ -48,6 +49,10 @@ const startSprint = async ({ projectId, sprintId }) => {
   if (sprint.startDate && sprint.endDate && sprint.endDate <= sprint.startDate) {
     throw new Error("Sprint end date must be after its start date");
   }
+  await Issue.updateMany(
+    { project: projectId, sprint: sprintId, status: "BACKLOG", archivedAt: null },
+    { $set: { status: "TODO" } }
+  );
   sprint.status = "ACTIVE";
   sprint.startedAt = new Date();
   await sprint.save();
@@ -81,6 +86,7 @@ const assignIssueToSprint = async ({ projectId, issueId, sprintId }) => {
     });
     if (!sprint) throw new Error("Target sprint not found or already completed");
     issue.sprint = sprint._id;
+    if (sprint.status === "ACTIVE" && issue.status === "BACKLOG") issue.status = "TODO";
   } else {
     issue.sprint = null;
   }
