@@ -166,6 +166,25 @@ export const getMyProjects = (orgId) =>
 export const createProject = (organizationId, payload) =>
   request(`/organizations/${organizationId}/projects`, { method: "POST", body: payload }).then((r) => r.data.project);
 
+// GET /api/organization/:orgId -> { data: { organization, role } }
+export const getOrganization = (orgId) =>
+  request(`/organization/${orgId}`).then((r) => r.data);
+
+// PUT /api/organization/:orgId (owner/admin)
+export const updateOrganization = (orgId, payload) =>
+  request(`/organization/${orgId}`, { method: "PUT", body: payload }).then((r) => r.data.organization);
+
+// PATCH /api/organization/:orgId/transfer-ownership (owner only)
+export const transferOrganizationOwnership = (orgId, newOwnerMemberId) =>
+  request(`/organization/${orgId}/transfer-ownership`, {
+    method: "PATCH",
+    body: { newOwnerMemberId },
+  }).then((r) => r.data);
+
+// DELETE /api/organization/:orgId/leave
+export const leaveOrganization = (orgId) =>
+  request(`/organization/${orgId}/leave`, { method: "DELETE" });
+
 // POST /api/organization -> { data: { organization } }  (creator becomes OWNER)
 export const createOrganization = (payload) =>
   request("/organization", { method: "POST", body: payload }).then((r) => r.data.organization);
