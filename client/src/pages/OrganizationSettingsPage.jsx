@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { AlertTriangle, Building2, Check, Crown, LoaderCircle, Save, Shield, UserRoundCog } from "lucide-react";
+import { AlertTriangle, Building2, Check, Crown, LoaderCircle, Save, UserRoundCog } from "lucide-react";
 import { useOrganization } from "../context/OrganizationContext";
 import {
   getOrgMembers,
