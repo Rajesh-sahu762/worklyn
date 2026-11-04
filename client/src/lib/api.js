@@ -189,6 +189,25 @@ export const leaveOrganization = (orgId) =>
 export const createOrganization = (payload) =>
   request("/organization", { method: "POST", body: payload }).then((r) => r.data.organization);
 
+// Project membership
+export const getProjectMembers = (projectId) =>
+  request(`/projects/${projectId}/members`).then((r) => r.data.members ?? []);
+
+export const addProjectMember = (projectId, userId, role = "MEMBER") =>
+  request(`/projects/${projectId}/members`, {
+    method: "POST",
+    body: { userId, role },
+  }).then((r) => r.data.membership ?? r.data);
+
+export const updateProjectMemberRole = (projectId, memberId, role) =>
+  request(`/projects/${projectId}/members/${memberId}/role`, {
+    method: "PATCH",
+    body: { role },
+  }).then((r) => r.data.membership ?? r.data);
+
+export const removeProjectMember = (projectId, memberId) =>
+  request(`/projects/${projectId}/members/${memberId}`, { method: "DELETE" });
+
 // GET /api/projects/:projectId/issues?assignee=&limit=&status=...
 // Response key for the array isn't documented; accept the common shapes.
 export const getProjectIssues = (projectId, params = {}) => {
