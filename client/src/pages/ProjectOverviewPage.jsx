@@ -348,6 +348,9 @@ export default function ProjectOverviewPage() {
         <Link to={`/projects/${projectId}/members`} className="inline-flex min-h-9 items-center gap-2 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink transition hover:bg-surface-subtle">
           <Users size={15} /> Members
         </Link>
+        <Link to={`/projects/${projectId}/settings`} className="inline-flex min-h-9 items-center gap-2 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-ink transition hover:bg-surface-subtle">
+          <FolderKanban size={15} /> Settings
+        </Link>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
