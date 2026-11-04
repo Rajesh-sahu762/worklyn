@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import { ArrowLeft, CalendarDays, Check, CircleDot, Flag, LoaderCircle, Plus, RefreshCw, Rocket, Target } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { ArrowLeft, CalendarDays, Check, CircleDot, Flag, LoaderCircle, Plus, Rocket } from "lucide-react";
 import {
   assignIssueToSprint,
   completeSprint,
@@ -48,7 +47,6 @@ function SprintForm({ onCreate, saving }) {
 
 export default function ProjectSprintsPage() {
   const { projectId } = useParams();
-  const { user } = useAuth();
   const [project, setProject] = useState(null);
   const [role, setRole] = useState(null);
   const [sprints, setSprints] = useState([]);
