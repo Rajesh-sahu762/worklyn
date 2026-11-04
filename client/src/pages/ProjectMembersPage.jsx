@@ -23,7 +23,7 @@ const nameOf = (member) => {
 
 function Avatar({ member }) {
   const user = userOf(member);
-  const initials = nameOf(member).split(/\\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+  const initials = nameOf(member).split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   return <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-line bg-surface-subtle text-xs font-semibold text-ink-muted">{user.profileImage ? <img src={user.profileImage} alt="" className="h-full w-full object-cover" /> : initials || "?"}</span>;
 }
 
