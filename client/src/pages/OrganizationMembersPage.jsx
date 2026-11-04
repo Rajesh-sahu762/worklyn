@@ -102,11 +102,7 @@ export default function OrganizationMembersPage() {
     return () => { cancelled = true; };
   }, [orgId, key]);
 
-  useEffect(() => {
-    setSent([]);
-    setNotice(null);
-  }, [orgId]);
-
+  const orgSent = sent.filter((invitation) => invitation.orgId === orgId);
   const status = !orgId ? "idle" : data.key !== key ? "loading" : data.error ? "error" : "ready";
   const members = status === "ready" ? data.members : [];
   const setMembers = (update) => setData((current) => ({
@@ -144,6 +140,7 @@ export default function OrganizationMembersPage() {
     try {
       const { invitation, link } = await createInvitation(orgId, email, invite.role);
       setSent((list) => [{
+        orgId,
         id: invitation?._id ?? invitation?.id,
         email,
         role: invite.role,
@@ -308,18 +305,18 @@ export default function OrganizationMembersPage() {
         </div>
       )}
 
-      {sent.length > 0 && (
+      {orgSent.length > 0 && (
         <section aria-labelledby="invitations-heading" className="overflow-hidden rounded-xl border border-line bg-surface">
           <div className="flex flex-col gap-1 border-b border-line px-4 py-4 sm:px-5">
             <div className="flex items-center gap-2">
               <MailPlus size={17} className="text-ink-muted" />
               <h2 id="invitations-heading" className="font-semibold text-ink">Recently invited</h2>
-              <span className="rounded-full bg-surface-subtle px-2 py-0.5 text-xs font-medium text-ink-muted">{sent.length}</span>
+              <span className="rounded-full bg-surface-subtle px-2 py-0.5 text-xs font-medium text-ink-muted">{orgSent.length}</span>
             </div>
             <p className="text-xs leading-5 text-ink-muted">Email delivery isn't configured yet. Copy and share these links directly. This temporary list clears when you leave this page.</p>
           </div>
           <ul className="divide-y divide-line">
-            {sent.map((invitation) => (
+            {orgSent.map((invitation) => (
               <li key={invitation.id} className="flex min-w-0 flex-col gap-3 p-4 sm:px-5">
                 <div className="flex min-w-0 items-start justify-between gap-3">
                   <div className="min-w-0">
