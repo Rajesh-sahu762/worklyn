@@ -21,6 +21,7 @@ const TITLES = {
   "/members": "Members",
   "/teams": "Teams",
   "/projects/:projectId/backlog": "Project backlog",
+  "/projects/:projectId/board": "Project board",
   "/settings/organization": "Organization settings",
   "/invitations/accept": "Accept invitation"
 };
@@ -40,6 +41,8 @@ export default function Navbar({ onOpenMenu, onOpenSearch }) {
     ? "Project issues"
     : pathname.endsWith("/backlog")
       ? "Project backlog"
+    : pathname.endsWith("/board")
+      ? "Project board"
       : pathname.endsWith("/members")
         ? "Project members"
         : pathname.endsWith("/settings")
