@@ -11,7 +11,7 @@ import {
   Plus,
   X,
 } from "lucide-react";
-import { getProject, getProjectIssues, createIssue } from "../lib/api";
+import { getProject, getProjectIssues, createIssue, getProjectMembers, getTeams, getSprints } from "../lib/api";
 
 const LIMIT = 20;
 
@@ -154,12 +154,19 @@ export default function ProjectIssuesPage() {
     description: "",
     type: "TASK",
     priority: "MEDIUM",
+    status: "TODO",
+    assignmentType: "none",
+    assigneeId: "",
+    assigneeTeamId: "",
+    sprintId: "",
+    parentIssueId: "",
     labels: "",
     dueDate: "",
     estimate: "",
   };
 
   const [createForm, setCreateForm] = useState(initialForm);
+  const [assignmentOptions, setAssignmentOptions] = useState({ members: [], teams: [], sprints: [] });
 
   const [projectState, setProjectState] = useState({
     id: null,
@@ -209,6 +216,28 @@ export default function ProjectIssuesPage() {
       cancelled = true;
     };
   }, [projectId]);
+
+  useEffect(() => {
+    const loadedProject = projectState.id === projectId ? projectState.project : null;
+    if (!loadedProject) return;
+    let cancelled = false;
+    Promise.all([
+      getProjectMembers(projectId),
+      loadedProject.organization ? getTeams(loadedProject.organization) : Promise.resolve([]),
+      getSprints(projectId),
+    ]).then(([members, teams, sprints]) => {
+      if (cancelled) return;
+      const attachedTeamIds = (loadedProject.teams || []).map(team => String(typeof team === "object" ? team._id : team));
+      setAssignmentOptions({
+        members: (members || []).filter(item => item.status === "ACTIVE" && item.user).map(item => item.user),
+        teams: (teams || []).filter(team => team.isActive && attachedTeamIds.includes(String(team._id || team.id))),
+        sprints: (sprints || []).filter(sprint => sprint.status !== "COMPLETED"),
+      });
+    }).catch(() => {
+      if (!cancelled) setAssignmentOptions({ members: [], teams: [], sprints: [] });
+    });
+    return () => { cancelled = true; };
+  }, [projectId, projectState]);
 
   useEffect(() => {
     let cancelled = false;
@@ -289,7 +318,12 @@ export default function ProjectIssuesPage() {
       description: createForm.description.trim(),
       type: createForm.type,
       priority: createForm.priority,
+      status: createForm.status,
     };
+    if (createForm.assignmentType === "user" && createForm.assigneeId) payload.assigneeId = createForm.assigneeId;
+    if (createForm.assignmentType === "team" && createForm.assigneeTeamId) payload.assigneeTeamId = createForm.assigneeTeamId;
+    if (createForm.sprintId) payload.sprintId = createForm.sprintId;
+    if (createForm.parentIssueId) payload.parentIssueId = createForm.parentIssueId;
 
     if (createForm.labels.trim()) {
       payload.labels = [
@@ -688,6 +722,27 @@ export default function ProjectIssuesPage() {
               <option value="HIGHEST">Highest</option>
             </select>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="min-w-0 space-y-1.5">
+            <label className="text-xs font-semibold text-ink">Status</label>
+            <select value={createForm.status} onChange={event => setCreateForm(current => ({ ...current, status: event.target.value }))} className="h-11 w-full rounded-control border border-line bg-canvas px-3 text-sm">
+              <option value="BACKLOG">Backlog</option><option value="TODO">To do</option><option value="IN_PROGRESS">In progress</option><option value="IN_REVIEW">In review</option><option value="DONE">Done</option>
+            </select>
+          </div>
+          <div className="min-w-0 space-y-1.5">
+            <label className="text-xs font-semibold text-ink">Assign to</label>
+            <select value={createForm.assignmentType} onChange={event => setCreateForm(current => ({ ...current, assignmentType: event.target.value, assigneeId: "", assigneeTeamId: "" }))} className="h-11 w-full rounded-control border border-line bg-canvas px-3 text-sm">
+              <option value="none">Unassigned</option><option value="user">Individual user</option><option value="team">Team</option>
+            </select>
+          </div>
+        </div>
+        {createForm.assignmentType === "user" && <label className="block space-y-1.5"><span className="text-xs font-semibold text-ink">Assignee</span><select required value={createForm.assigneeId} onChange={event => setCreateForm(current => ({ ...current, assigneeId: event.target.value }))} className="h-11 w-full rounded-control border border-line bg-canvas px-3 text-sm"><option value="">Select project member</option>{assignmentOptions.members.map(user => <option key={user._id} value={user._id}>{[user.firstName, user.lastName].filter(Boolean).join(" ") || user.email}</option>)}</select></label>}
+        {createForm.assignmentType === "team" && <label className="block space-y-1.5"><span className="text-xs font-semibold text-ink">Assign team</span><select required value={createForm.assigneeTeamId} onChange={event => setCreateForm(current => ({ ...current, assigneeTeamId: event.target.value }))} className="h-11 w-full rounded-control border border-line bg-canvas px-3 text-sm"><option value="">Select project team</option>{assignmentOptions.teams.map(team => <option key={team._id || team.id} value={team._id || team.id}>{team.name}</option>)}</select>{assignmentOptions.teams.length === 0 && <span className="text-[11px] text-ink-faint">No teams are attached to this project yet.</span>}</label>}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label className="block space-y-1.5"><span className="text-xs font-semibold text-ink">Sprint</span><select value={createForm.sprintId} onChange={event => setCreateForm(current => ({ ...current, sprintId: event.target.value }))} className="h-11 w-full rounded-control border border-line bg-canvas px-3 text-sm"><option value="">No sprint</option>{assignmentOptions.sprints.map(sprint => <option key={sprint._id} value={sprint._id}>{sprint.name} · {formatLabel(sprint.status)}</option>)}</select></label>
+          <label className="block space-y-1.5"><span className="text-xs font-semibold text-ink">Parent issue</span><select value={createForm.parentIssueId} onChange={event => setCreateForm(current => ({ ...current, parentIssueId: event.target.value, type: event.target.value ? "SUB_TASK" : current.type }))} className="h-11 w-full rounded-control border border-line bg-canvas px-3 text-sm"><option value="">No parent issue</option>{issues.filter(issue => issue.type !== "SUB_TASK").map(issue => <option key={issue._id} value={issue._id}>{issue.issueKey} · {issue.title}</option>)}</select></label>
         </div>
 
         <div className="space-y-1.5">
