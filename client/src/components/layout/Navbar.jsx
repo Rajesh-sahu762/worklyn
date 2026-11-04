@@ -37,7 +37,11 @@ export default function Navbar({ onOpenMenu, onOpenSearch }) {
   TITLES[pathname] ??
   (pathname.endsWith("/issues")
     ? "Project issues"
-    : pathname.startsWith("/projects/")
+    : pathname.endsWith("/backlog")
+      ? "Project backlog"
+      : pathname.endsWith("/members")
+        ? "Project members"
+        : pathname.startsWith("/projects/")
       ? "Project overview"
       : "");
 
