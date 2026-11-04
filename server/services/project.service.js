@@ -49,7 +49,7 @@ const createProject = async ({
     const activeUserIds = new Set(organizationMembers.map(m => String(m.user)));
     const projectMembers = [...participantIds].filter(id => activeUserIds.has(id)).map(userId => ({
       project: createdProject._id, user: userId,
-      role: userId === String(createdBy) ? "PROJECT_ADMIN" : "MEMBER",
+      role: (userId === String(createdBy) || userId === String(normalizedLead)) ? "PROJECT_ADMIN" : "MEMBER",
       status: "ACTIVE", joinedAt: new Date(),
     }));
     if (!projectMembers.some(m => m.user === String(createdBy))) {
