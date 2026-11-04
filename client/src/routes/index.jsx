@@ -14,6 +14,7 @@ import ProjectMembersPage from "../pages/ProjectMembersPage";
 import ProjectSettingsPage from "../pages/ProjectSettingsPage";
 import ProjectBoardPage from "../pages/ProjectBoardPage";
 import ProjectSprintsPage from "../pages/ProjectSprintsPage";
+import ProjectReportsPage from "../pages/ProjectReportsPage";
 import IssueDetailPage from "../pages/IssueDetailPage";
 import OrganizationMembersPage from "../pages/OrganizationMembersPage";
 import OrganizationSettingsPage from "../pages/OrganizationSettingsPage";
@@ -45,6 +46,7 @@ export default function AppRoutes() {
           />
           <Route path="/projects/:projectId/board" element={<ProjectBoardPage />} />
           <Route path="/projects/:projectId/sprints" element={<ProjectSprintsPage />} />
+          <Route path="/projects/:projectId/reports" element={<ProjectReportsPage />} />
           <Route path="/projects/:projectId/backlog" element={<ProjectBacklogPage />} />
           <Route path="/projects/:projectId/members" element={<ProjectMembersPage />} />
           <Route path="/projects/:projectId/settings" element={<ProjectSettingsPage />} />
