@@ -494,3 +494,20 @@ Source changes are committed. No local build, lint, automated tests or live API/
 
 ### Verification note
 Source changes are committed. No build, lint, automated integration tests or live MongoDB transaction/index verification has been executed in this editing session. Verify the partial unique index on the deployed MongoDB version and test lifecycle transitions with a project-admin account before production use.
+
+## 26. Notification inbox implementation — 4 November 2026
+
+### Backend
+- Added a persistent `Notification` model with recipient, actor, organization, project, issue, event type, message, read timestamp and recipient/read/time index.
+- Added authenticated inbox APIs: `GET /api/notifications?page=&limit=`, `GET /api/notifications/unread-count`, `PATCH /api/notifications/:notificationId/read`, and `PATCH /api/notifications/read-all`.
+- Issue assignment notifies the new assignee; issue status changes notify the reporter and assignee; new comments notify the reporter and assignee. The actor does not receive their own notification.
+- Notification writes are best-effort side effects so a notification persistence problem does not fail the primary issue/comment operation.
+
+### Frontend
+- Added `/notifications` with unread count, read/unread state, mark-one-read, mark-all-read, refresh and pagination.
+- Notification entries link back to their project issue. The navbar notification popover links to the inbox and the sidebar feature is enabled.
+
+### Current scope and limitations
+- Event types are assignment, status change and comment. @mentions, project watchers, team-level notifications, email/push delivery, notification preferences and real-time updates are not implemented.
+- The inbox uses paginated polling-on-navigation/refresh, not WebSockets or background polling.
+- Source changes are committed but have not been run through build/lint or live MongoDB/API integration tests in this editing session.
