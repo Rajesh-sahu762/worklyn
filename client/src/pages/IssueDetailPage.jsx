@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import {
@@ -33,6 +32,8 @@ const STATUS_TRANSITIONS = {
   DONE: ["IN_REVIEW"],
 };
 
+const STATUS_OPTIONS = ["BACKLOG", "TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
+
 const STATUS_STYLES = {
   BACKLOG: "bg-status-backlog/10 text-status-backlog",
   TODO: "bg-status-todo/10 text-status-todo",
@@ -51,7 +52,7 @@ const formatLabel = (value = "") =>
     .replace(/^\w/, (letter) => letter.toUpperCase());
 
 const getId = (value) =>
-  typeof value === "object" ? value?._id ?? value?.id : value;
+  typeof value === "object" ? (value?._id ?? value?.id) : value;
 
 const getPersonName = (person) => {
   if (!person || typeof person !== "object") return "Unknown user";
@@ -64,8 +65,7 @@ const getPersonName = (person) => {
   );
 };
 
-const getDate = (value) =>
-  value ? new Date(value).toLocaleString() : "—";
+const getDate = (value) => (value ? new Date(value).toLocaleString() : "—");
 
 function StatusBadge({ status }) {
   return (
@@ -94,9 +94,10 @@ function SectionHeading({ icon: Icon, children, count }) {
   );
 }
 
+
 function Field({ label, children }) {
   return (
-    <div className="space-y-1.5">
+    <div className="min-w-0 space-y-1.5">
       <label className="block text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
         {label}
       </label>
@@ -105,36 +106,30 @@ function Field({ label, children }) {
   );
 }
 
-const inputClass =
-  "h-10 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink outline-none transition focus:border-accent-support";
 
-function CommentItem({
-  comment,
-  currentUserId,
-  onUpdate,
-  onDelete,
-  busy,
-}) {
+
+const inputClass =
+  "box-border h-10 w-full min-w-0 max-w-full rounded-control border border-line bg-surface px-3 text-sm text-ink outline-none transition focus:border-accent-support";
+
+function CommentItem({ comment, currentUserId, onUpdate, onDelete, busy }) {
   const [editing, setEditing] = useState(false);
   const [body, setBody] = useState(comment.body || "");
 
   const commentId = getId(comment.author);
-  const isAuthor =
-    currentUserId && commentId && currentUserId === commentId;
+  const isAuthor = currentUserId && commentId && currentUserId === commentId;
 
   const isDeleted = Boolean(comment.deletedAt);
 
   const save = async () => {
-  if (!body.trim()) return;
+    if (!body.trim()) return;
 
-  try {
-    await onUpdate(comment._id || comment.id, body.trim());
-    setEditing(false);
-  } catch {
-    // Keep the editor open; the parent displays the API error.
-    
-  }
-};
+    try {
+      await onUpdate(comment._id || comment.id, body.trim());
+      setEditing(false);
+    } catch {
+      // Keep the editor open; the parent displays the API error.
+    }
+  };
 
   return (
     <article className="flex gap-3 py-4">
@@ -222,6 +217,7 @@ function CommentItem({
 export default function IssueDetailPage() {
   const { projectId, issueId } = useParams();
   const { user } = useAuth();
+  const [showAllActivities, setShowAllActivities] = useState(false);
 
   const currentUserId = getId(user);
 
@@ -253,8 +249,7 @@ export default function IssueDetailPage() {
   const [issueActionError, setIssueActionError] = useState("");
   const [statusBusy, setStatusBusy] = useState(false);
 
-  const canEdit =
-  projectRole === "PROJECT_ADMIN" || projectRole === "MEMBER";
+  const canEdit = projectRole === "PROJECT_ADMIN" || projectRole === "MEMBER";
 
   const loadIssue = useCallback(async () => {
     setPageStatus("loading");
@@ -431,9 +426,7 @@ export default function IssueDetailPage() {
   if (pageStatus === "error") {
     return (
       <section className="mx-auto flex min-h-[45vh] max-w-xl flex-col items-center justify-center text-center">
-        <h1 className="text-lg font-semibold text-ink">
-          Issue unavailable
-        </h1>
+        <h1 className="text-lg font-semibold text-ink">Issue unavailable</h1>
         <p role="alert" className="mt-2 text-sm text-ink-muted">
           {pageError}
         </p>
@@ -472,8 +465,8 @@ export default function IssueDetailPage() {
           <span>{issue.issueKey || issue.key || "Issue"}</span>
         </div>
 
-        <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 flex-1">
             <h1 className="break-words text-2xl font-semibold tracking-tight text-ink">
               {issue.title}
             </h1>
@@ -486,7 +479,7 @@ export default function IssueDetailPage() {
             <button
               type="button"
               onClick={() => setEditingIssue((current) => !current)}
-              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-control border border-line bg-surface px-3 text-xs font-semibold text-ink transition hover:bg-surface-subtle"
+              className="inline-flex h-10 w-fit shrink-0 items-center justify-center gap-2 self-end rounded-control border border-line bg-surface px-4 text-xs font-semibold text-ink transition hover:bg-surface-subtle sm:self-center"
             >
               {editingIssue ? <X size={15} /> : <Pencil size={15} />}
               {editingIssue ? "Cancel edit" : "Edit issue"}
@@ -496,7 +489,10 @@ export default function IssueDetailPage() {
       </div>
 
       {issueActionError && (
-        <p role="alert" className="rounded-control bg-danger/10 px-4 py-3 text-sm text-danger">
+        <p
+          role="alert"
+          className="rounded-control bg-danger/10 px-4 py-3 text-sm text-danger"
+        >
           {issueActionError}
         </p>
       )}
@@ -599,7 +595,8 @@ export default function IssueDetailPage() {
               <>
                 <SectionHeading icon={CircleDot}>Description</SectionHeading>
                 <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-ink-muted">
-                  {issue.description?.trim() || "No description has been added."}
+                  {issue.description?.trim() ||
+                    "No description has been added."}
                 </p>
               </>
             )}
@@ -678,92 +675,145 @@ export default function IssueDetailPage() {
             </div>
           </section>
 
-          <section className="rounded-panel border border-line bg-surface p-4 sm:p-5">
-            <SectionHeading icon={Activity} count={activities.length}>
-              Activity
-            </SectionHeading>
+         
+<section className="rounded-panel border border-line bg-surface p-4 sm:p-5">
+  <div className="flex items-center justify-between gap-3">
+    <SectionHeading icon={Activity} count={activities.length}>
+      Activity
+    </SectionHeading>
 
-            {activityStatus === "loading" && (
-              <p className="mt-4 text-xs text-ink-muted">
-                Loading activity...
-              </p>
-            )}
+    {activities.length > 5 && (
+      <button
+        type="button"
+        onClick={() => setShowAllActivities((current) => !current)}
+        className="shrink-0 text-xs font-semibold text-accent-support hover:underline"
+      >
+        {showAllActivities ? "Show less" : "Show all"}
+      </button>
+    )}
+  </div>
 
-            {activityStatus === "error" && (
-              <p className="mt-4 text-xs text-ink-muted">
-                Activity history is currently unavailable.
-              </p>
-            )}
+  {activityStatus === "loading" && (
+    <p className="mt-4 text-xs text-ink-muted">
+      Loading activity...
+    </p>
+  )}
 
-            {activityStatus === "ready" && activities.length === 0 && (
-              <p className="mt-4 text-xs text-ink-muted">
-                No activity has been recorded for this issue yet.
-              </p>
-            )}
+  {activityStatus === "error" && (
+    <p className="mt-4 text-xs text-ink-muted">
+      Activity history is currently unavailable.
+    </p>
+  )}
 
-            {activityStatus === "ready" && activities.length > 0 && (
-              <div className="mt-5 space-y-4">
-                {activities.map((activity) => (
-                  <div
-                    key={activity._id || activity.id}
-                    className="flex gap-3"
-                  >
-                    <span className="mt-1 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface-subtle text-ink-muted">
-                      <Clock3 size={13} />
-                    </span>
+  {activityStatus === "ready" && activities.length === 0 && (
+    <p className="mt-4 text-xs text-ink-muted">
+      No activity has been recorded yet.
+    </p>
+  )}
 
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold text-ink">
-                        {formatLabel(activity.action)}
-                      </p>
-                      <p className="mt-0.5 text-[11px] text-ink-muted">
-                        {getPersonName(activity.actor)} ·{" "}
-                        {getDate(activity.createdAt)}
-                      </p>
+  {activityStatus === "ready" && activities.length > 0 && (
+    <div className="mt-4 space-y-3">
+      {(showAllActivities ? activities : activities.slice(0, 5)).map(
+        (activity) => (
+          <div
+            key={activity._id || activity.id}
+            className="flex min-w-0 gap-3"
+          >
+            <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface-subtle text-ink-muted">
+              <Clock3 size={13} />
+            </span>
 
-                      {activity.changes?.map((change, index) => (
-                        <p
-                          key={`${change.field}-${index}`}
-                          className="mt-1 break-words text-xs text-ink-muted"
-                        >
-                          {formatLabel(change.field)}:{" "}
-                          {formatLabel(String(change.from ?? "Empty"))}{" "}
-                          <span className="px-1">→</span>
-                          {formatLabel(String(change.to ?? "Empty"))}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <p className="text-xs font-semibold text-ink">
+                  {formatLabel(activity.action)}
+                </p>
+
+                <span className="text-[10px] text-ink-faint">
+                  {getDate(activity.createdAt)}
+                </span>
               </div>
-            )}
-          </section>
+
+              <p className="mt-0.5 truncate text-[11px] text-ink-muted">
+                {getPersonName(activity.actor)}
+              </p>
+
+              {activity.changes?.length > 0 && (
+                <div className="mt-1 space-y-0.5">
+                  {activity.changes.map((change, index) => (
+                    <p
+                      key={`${change.field}-${index}`}
+                      className="break-words text-[11px] leading-4 text-ink-muted"
+                    >
+                      <span className="font-medium text-ink">
+                        {formatLabel(change.field)}
+                      </span>
+                      : {formatLabel(String(change.from ?? "Empty"))}
+                      {" → "}
+                      {formatLabel(String(change.to ?? "Empty"))}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      )}
+    </div>
+  )}
+
+  {activityStatus === "ready" && activities.length > 5 && (
+    <button
+      type="button"
+      onClick={() => setShowAllActivities((current) => !current)}
+      className="mt-4 w-full border-t border-line pt-3 text-center text-xs font-semibold text-accent-support hover:underline"
+    >
+      {showAllActivities
+        ? "Show less activity"
+        : `View all ${activities.length} activities`}
+    </button>
+  )}
+</section>
+
         </div>
 
-        <aside className="h-fit space-y-4">
+        <aside className="min-w-0 space-y-4">
           <section className="rounded-panel border border-line bg-surface p-4">
             <h2 className="text-sm font-semibold text-ink">Properties</h2>
 
             <div className="mt-4 space-y-4">
               <Field label="Status">
                 <StatusBadge status={issue.status} />
-                {canEdit && nextStatuses.length > 0 && (
+
+                {canEdit && (
                   <select
                     disabled={statusBusy}
                     value=""
                     onChange={(event) => handleStatusChange(event.target.value)}
-                    className={`${inputClass} mt-2`}
+                    className={`${inputClass} mt-2 block w-full min-w-0 max-w-full`}
                   >
-                    <option value="">
+                    <option value="" disabled>
                       {statusBusy ? "Updating..." : "Move to..."}
                     </option>
-                    {nextStatuses.map((status) => (
-                      <option key={status} value={status}>
-                        {formatLabel(status)}
-                      </option>
-                    ))}
+
+                    {STATUS_OPTIONS.map((status) => {
+                      const isCurrent = status === issue.status;
+                      const isAllowed = nextStatuses.includes(status);
+
+                      return (
+                        <option
+                          key={status}
+                          value={status}
+                          disabled={isCurrent || !isAllowed}
+                        >
+                          {formatLabel(status)}
+                          {isCurrent ? " (Current)" : ""}
+                        </option>
+                      );
+                    })}
                   </select>
                 )}
+
                 {!canEdit && (
                   <p className="mt-2 text-[11px] text-ink-faint">
                     Viewers cannot change issue status.

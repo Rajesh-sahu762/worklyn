@@ -50,16 +50,20 @@ function StatusLabel({ status }) {
   );
 }
 
-function IssueRow({ issue }) {
+
+function IssueRow({ issue, projectId }) {
   return (
-    <div className="flex flex-col gap-2 border-b border-line px-4 py-3 last:border-b-0 sm:flex-row sm:items-center sm:gap-4">
+    <Link
+      to={`/projects/${projectId}/issues/${issue._id || issue.id}`}
+      className="group flex flex-col gap-2 border-b border-line px-4 py-3 transition-colors last:border-b-0 hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent-support sm:flex-row sm:items-center sm:gap-4"
+    >
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        <span className="shrink-0 text-ink-faint">
+        <span className="shrink-0 text-ink-faint group-hover:text-accent-support">
           <CircleDot size={16} strokeWidth={1.8} />
         </span>
 
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-ink">
+          <p className="truncate text-sm font-medium text-ink group-hover:text-accent-support">
             {issue.title}
           </p>
 
@@ -74,16 +78,16 @@ function IssueRow({ issue }) {
 
         <span
           className={`min-w-16 text-right text-[11px] font-medium ${
-            PRIORITY_STYLES[issue.priority] ||
-            "text-ink-muted"
+            PRIORITY_STYLES[issue.priority] || "text-ink-muted"
           }`}
         >
           {formatLabel(issue.priority)}
         </span>
       </div>
-    </div>
+    </Link>
   );
 }
+
 
 function LoadingState() {
   return (
@@ -399,12 +403,13 @@ export default function ProjectOverviewPage() {
 
   {issuesStatus === "ready" && issues.length > 0 && (
     <div>
-      {issues.map((issue) => (
-        <IssueRow
-          key={issue._id || issue.id}
-          issue={issue}
-        />
-      ))}
+     {issues.map((issue) => (
+  <IssueRow
+    key={issue._id || issue.id}
+    issue={issue}
+    projectId={projectId}
+  />
+))}
     </div>
   )}
 </section>

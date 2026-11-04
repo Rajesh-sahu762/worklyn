@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import {
   ArrowLeft,
   Search,
@@ -9,8 +8,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ListFilter,
+  Plus,
+  X,
 } from "lucide-react";
-import { getProject, getProjectIssues } from "../lib/api";
+import { getProject, getProjectIssues, createIssue } from "../lib/api";
 
 const LIMIT = 20;
 
@@ -67,7 +68,7 @@ function FilterSelect({ value, onChange, options, label }) {
   );
 }
 
-function IssueRow({ issue ,projectId}) {
+function IssueRow({ issue, projectId }) {
   const assignee = issue.assignee;
   const assigneeName =
     typeof assignee === "object" && assignee
@@ -89,18 +90,20 @@ function IssueRow({ issue ,projectId}) {
 
         <div className="min-w-0">
           <Link
-  to={`/projects/${projectId}/issues/${issue._id || issue.id}`}
-  className="break-words text-sm font-medium text-ink hover:text-accent-support"
->
-  {issue.title || "Untitled issue"}
-</Link>
+            to={`/projects/${projectId}/issues/${issue._id || issue.id}`}
+            className="break-words text-sm font-medium text-ink hover:text-accent-support"
+          >
+            {issue.title || "Untitled issue"}
+          </Link>
 
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink-muted">
             <span className="font-mono">
               {issue.issueKey || issue.key || "Issue"}
             </span>
             <span>{formatLabel(issue.type || "TASK")}</span>
-            <span>{assigneeName || (assignee ? "Assigned" : "Unassigned")}</span>
+            <span>
+              {assigneeName || (assignee ? "Assigned" : "Unassigned")}
+            </span>
             <span>Updated {updatedAt}</span>
           </div>
         </div>
@@ -138,6 +141,25 @@ function LoadingRows() {
 
 export default function ProjectIssuesPage() {
   const { projectId } = useParams();
+
+  const navigate = useNavigate();
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const initialForm = {
+    title: "",
+    description: "",
+    type: "TASK",
+    priority: "MEDIUM",
+    labels: "",
+    dueDate: "",
+    estimate: "",
+  };
+
+  const [createForm, setCreateForm] = useState(initialForm);
 
   const [projectState, setProjectState] = useState({
     id: null,
@@ -233,26 +255,79 @@ export default function ProjectIssuesPage() {
     return () => {
       cancelled = true;
     };
-  }, [projectId, page, searchInput, filters]);
+  }, [projectId, page, searchInput, filters, refreshKey]);
 
-  const project =
-    projectState.id === projectId ? projectState.project : null;
+  const project = projectState.id === projectId ? projectState.project : null;
 
-  const projectError =
-    projectState.id === projectId ? projectState.error : "";
+  const projectError = projectState.id === projectId ? projectState.error : "";
 
   const issueStatus =
     issueState.id === projectId ? issueState.status : "loading";
 
-  const issues =
-    issueState.id === projectId ? issueState.items : [];
+  const issues = issueState.id === projectId ? issueState.items : [];
 
-  const issueError =
-    issueState.id === projectId ? issueState.error : "";
+  const issueError = issueState.id === projectId ? issueState.error : "";
 
   const updateFilter = (name, value) => {
     setFilters((current) => ({ ...current, [name]: value }));
     setPage(1);
+  };
+
+  const handleCreateIssue = async (event) => {
+    event.preventDefault();
+
+    if (createForm.title.trim().length < 3) {
+      setCreateError("Title must contain at least 3 characters.");
+      return;
+    }
+
+    setCreating(true);
+    setCreateError("");
+
+    const payload = {
+      title: createForm.title.trim(),
+      description: createForm.description.trim(),
+      type: createForm.type,
+      priority: createForm.priority,
+    };
+
+    if (createForm.labels.trim()) {
+      payload.labels = [
+        ...new Set(
+          createForm.labels
+            .split(",")
+            .map((label) => label.trim())
+            .filter(Boolean),
+        ),
+      ];
+    }
+
+    if (createForm.dueDate) {
+      payload.dueDate = createForm.dueDate;
+    }
+
+    if (createForm.estimate !== "") {
+      payload.estimate = Number(createForm.estimate);
+    }
+
+    try {
+      const createdIssue = await createIssue(projectId, payload);
+
+      const createdId = createdIssue?._id || createdIssue?.id;
+
+      setCreateOpen(false);
+      setCreateForm(initialForm);
+      setPage(1);
+      setRefreshKey((current) => current + 1);
+
+      if (createdId) {
+        navigate(`/projects/${projectId}/issues/${createdId}`);
+      }
+    } catch (error) {
+      setCreateError(error.message || "Couldn't create this issue.");
+    } finally {
+      setCreating(false);
+    }
   };
 
   const hasNextPage = issues.length === LIMIT;
@@ -283,18 +358,33 @@ export default function ProjectIssuesPage() {
           Project overview
         </Link>
 
-        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+        <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.13em] text-accent-support">
               {project?.key || "Project"}
             </p>
+
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
               Issues
             </h1>
+
             <p className="mt-1 text-sm text-ink-muted">
-              {project?.name || "Project issues"} · Manage and track project work
+              {project?.name || "Project issues"} · Manage and track project
+              work
             </p>
           </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setCreateError("");
+              setCreateOpen(true);
+            }}
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-control bg-accent px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-support"
+          >
+            <Plus size={16} />
+            Create issue
+          </button>
         </div>
       </div>
 
@@ -432,12 +522,12 @@ export default function ProjectIssuesPage() {
 
             <div>
               {issues.map((issue) => (
-  <IssueRow
-    key={issue._id || issue.id || issue.issueKey}
-    issue={issue}
-    projectId={projectId}
-  />
-))}
+                <IssueRow
+                  key={issue._id || issue.id || issue.issueKey}
+                  issue={issue}
+                  projectId={projectId}
+                />
+              ))}
             </div>
 
             <div className="flex items-center justify-between border-t border-line px-4 py-3 sm:px-5">
@@ -466,6 +556,235 @@ export default function ProjectIssuesPage() {
           </>
         )}
       </section>
+
+      
+{createOpen && (
+  <div
+    className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/40 p-0 backdrop-blur-[2px] sm:items-center sm:p-5"
+    onMouseDown={(event) => {
+      if (event.target === event.currentTarget && !creating) {
+        setCreateOpen(false);
+      }
+    }}
+  >
+    <section
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-issue-title"
+      className="my-auto w-full max-w-xl overflow-hidden rounded-t-2xl border border-line bg-surface shadow-2xl sm:rounded-panel"
+    >
+      <div className="flex items-center justify-between border-b border-line px-5 py-4 sm:px-6">
+        <div>
+          <h2
+            id="create-issue-title"
+            className="text-lg font-semibold text-ink"
+          >
+            Create issue
+          </h2>
+          <p className="mt-1 text-xs text-ink-muted">
+            Add a new task to {project?.name || "this project"}.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          disabled={creating}
+          onClick={() => setCreateOpen(false)}
+          aria-label="Close create issue dialog"
+          className="grid h-9 w-9 place-items-center rounded-control text-ink-muted transition hover:bg-surface-subtle hover:text-ink disabled:opacity-50"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      <form
+        onSubmit={handleCreateIssue}
+        className="max-h-[calc(100dvh-100px)] space-y-5 overflow-y-auto p-5 sm:max-h-[80vh] sm:p-6"
+      >
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-ink">
+            Issue title <span className="text-danger">*</span>
+          </label>
+
+          <input
+            autoFocus
+            required
+            minLength={3}
+            maxLength={200}
+            value={createForm.title}
+            onChange={(event) =>
+              setCreateForm((current) => ({
+                ...current,
+                title: event.target.value,
+              }))
+            }
+            placeholder="e.g. Build authentication page"
+            className="h-11 w-full rounded-control border border-line bg-canvas px-3 text-sm text-ink outline-none transition placeholder:text-ink-faint focus:border-accent-support"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-ink">
+            Description
+          </label>
+
+          <textarea
+            rows={4}
+            maxLength={10000}
+            value={createForm.description}
+            onChange={(event) =>
+              setCreateForm((current) => ({
+                ...current,
+                description: event.target.value,
+              }))
+            }
+            placeholder="Describe what needs to be done..."
+            className="w-full resize-y rounded-control border border-line bg-canvas p-3 text-sm text-ink outline-none transition placeholder:text-ink-faint focus:border-accent-support"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="min-w-0 space-y-1.5">
+            <label className="text-xs font-semibold text-ink">
+              Issue type
+            </label>
+
+            <select
+              value={createForm.type}
+              onChange={(event) =>
+                setCreateForm((current) => ({
+                  ...current,
+                  type: event.target.value,
+                }))
+              }
+              className="h-11 w-full min-w-0 rounded-control border border-line bg-canvas px-3 text-sm text-ink outline-none focus:border-accent-support"
+            >
+              <option value="TASK">Task</option>
+              <option value="BUG">Bug</option>
+              <option value="STORY">Story</option>
+              <option value="EPIC">Epic</option>
+            </select>
+          </div>
+
+          <div className="min-w-0 space-y-1.5">
+            <label className="text-xs font-semibold text-ink">
+              Priority
+            </label>
+
+            <select
+              value={createForm.priority}
+              onChange={(event) =>
+                setCreateForm((current) => ({
+                  ...current,
+                  priority: event.target.value,
+                }))
+              }
+              className="h-11 w-full min-w-0 rounded-control border border-line bg-canvas px-3 text-sm text-ink outline-none focus:border-accent-support"
+            >
+              <option value="LOWEST">Lowest</option>
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+              <option value="HIGHEST">Highest</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-ink">
+            Labels
+          </label>
+
+          <input
+            value={createForm.labels}
+            onChange={(event) =>
+              setCreateForm((current) => ({
+                ...current,
+                labels: event.target.value,
+              }))
+            }
+            placeholder="frontend, authentication, urgent"
+            className="h-11 w-full rounded-control border border-line bg-canvas px-3 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-accent-support"
+          />
+
+          <p className="text-[11px] text-ink-faint">
+            Separate multiple labels with commas. Maximum 20 labels.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="min-w-0 space-y-1.5">
+            <label className="text-xs font-semibold text-ink">
+              Due date
+            </label>
+
+            <input
+              type="date"
+              value={createForm.dueDate}
+              onChange={(event) =>
+                setCreateForm((current) => ({
+                  ...current,
+                  dueDate: event.target.value,
+                }))
+              }
+              className="h-11 w-full min-w-0 rounded-control border border-line bg-canvas px-3 text-sm text-ink outline-none focus:border-accent-support"
+            />
+          </div>
+
+          <div className="min-w-0 space-y-1.5">
+            <label className="text-xs font-semibold text-ink">
+              Estimate
+            </label>
+
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={createForm.estimate}
+              onChange={(event) =>
+                setCreateForm((current) => ({
+                  ...current,
+                  estimate: event.target.value,
+                }))
+              }
+              placeholder="e.g. 5"
+              className="h-11 w-full min-w-0 rounded-control border border-line bg-canvas px-3 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-accent-support"
+            />
+          </div>
+        </div>
+
+        {createError && (
+          <p
+            role="alert"
+            className="rounded-control border border-danger/20 bg-danger/5 px-3 py-2.5 text-xs text-danger"
+          >
+            {createError}
+          </p>
+        )}
+
+        <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            disabled={creating}
+            onClick={() => setCreateOpen(false)}
+            className="h-10 rounded-control border border-line px-4 text-xs font-semibold text-ink-muted transition hover:bg-surface-subtle disabled:opacity-50"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            disabled={creating || createForm.title.trim().length < 3}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-control bg-accent px-5 text-xs font-semibold text-white shadow-sm transition hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {creating ? "Creating..." : "Create issue"}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+)}
+
     </div>
   );
 }

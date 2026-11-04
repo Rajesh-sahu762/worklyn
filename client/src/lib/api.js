@@ -244,6 +244,12 @@ export const getIssueActivities = (issueId) =>
   request(`/issues/${issueId}/activities`).then((r) => r.data ?? []);
 
 
+export const createIssue = (projectId, payload) =>
+  request(`/projects/${projectId}/issues`, {
+    method: "POST",
+    body: payload,
+  }).then((r) => r.data?.issue ?? r.data);
+
 
 
 
