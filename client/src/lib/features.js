@@ -6,7 +6,7 @@ export const FEATURES = {
   notifications: false,
   projectsList: true,
   projectPages: true,   // routes: /projects/:projectId
-  teams: false,
+  teams: true,
   members: true,
   createIssue: false,
   createProject: false,
