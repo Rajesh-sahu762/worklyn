@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { ArrowLeft, Check, LoaderCircle, Plus, RefreshCw, Shield, Users, UserMinus } from "lucide-react";
 import { useOrganization } from "../context/OrganizationContext";
+import { useAuth } from "../context/AuthContext";
 import {
   addProjectMember,
   getOrgMembers,
@@ -29,6 +30,8 @@ function Avatar({ member }) {
 export default function ProjectMembersPage() {
   const { projectId } = useParams();
   const { currentOrg } = useOrganization();
+  const { user } = useAuth();
+  const myId = user?._id ?? user?.id;
   const [project, setProject] = useState(null);
   const [role, setRole] = useState(null);
   const [members, setMembers] = useState([]);
@@ -184,7 +187,7 @@ export default function ProjectMembersPage() {
             const id = memberId(member);
             const isProjectAdmin = member.role === "PROJECT_ADMIN";
             return <li key={id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:px-5">
-              <div className="flex min-w-0 flex-1 items-center gap-3"><Avatar member={member} /><div className="min-w-0"><p className="truncate text-sm font-semibold text-ink">{nameOf(member)}{String(user._id ?? user.id) === String(member.currentUserId) ? " (you)" : ""}</p><p className="truncate text-xs text-ink-muted">{user.email ?? ""}</p></div></div>
+              <div className="flex min-w-0 flex-1 items-center gap-3"><Avatar member={member} /><div className="min-w-0"><p className="truncate text-sm font-semibold text-ink">{nameOf(member)}{String(user._id ?? user.id) === String(myId) ? " (you)" : ""}</p><p className="truncate text-xs text-ink-muted">{user.email ?? ""}</p></div></div>
               <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                 <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${isProjectAdmin ? "bg-brand-lime/20 text-ink" : "border border-line bg-surface-subtle text-ink-muted"}`}>{isProjectAdmin ? <Shield size={13} /> : null}{member.role === "PROJECT_ADMIN" ? "Project admin" : member.role === "VIEWER" ? "Viewer" : "Member"}</span>
                 {isAdmin && !isProjectAdmin && <><label className="sr-only" htmlFor={`project-role-${id}`}>Role for {nameOf(member)}</label><select id={`project-role-${id}`} value={member.role} disabled={busyId === id} onChange={(event) => changeRole(member, event.target.value)} className="h-9 rounded-control border border-line bg-surface px-2.5 text-xs text-ink"><option value="MEMBER">Member</option><option value="VIEWER">Viewer</option></select><button type="button" onClick={() => setRemoveTarget(member)} disabled={busyId === id} aria-label={`Remove ${nameOf(member)}`} className="grid h-9 w-9 place-items-center rounded-control text-danger hover:bg-danger/5 disabled:opacity-50"><UserMinus size={15} /></button></>}
