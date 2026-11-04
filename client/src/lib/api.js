@@ -189,6 +189,10 @@ export const leaveOrganization = (orgId) =>
 export const createOrganization = (payload) =>
   request("/organization", { method: "POST", body: payload }).then((r) => r.data.organization);
 
+// PATCH /api/projects/:projectId (project admin)
+export const updateProject = (projectId, payload) =>
+  request(`/projects/${projectId}`, { method: "PATCH", body: payload }).then((r) => r.data.project);
+
 // Project membership
 export const getProjectMembers = (projectId) =>
   request(`/projects/${projectId}/members`).then((r) => r.data.members ?? []);
