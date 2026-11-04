@@ -540,7 +540,6 @@ export default function OrganizationMembersPage() {
           </Field>
         </div>
       </ConfirmDialog>
-      )}
     </div>
   );
 }
