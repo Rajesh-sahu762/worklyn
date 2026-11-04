@@ -17,6 +17,7 @@ const authenticate = require("../middlewares/authenticate");
 const authorizeOrganization = require("../middlewares/authorizeOrganization");
 const {
   createInvitation,
+  listInvitations,
   cancelInvitation,
   resendInvitation,
 } = require("../controllers/organizationInvitation.controller");
@@ -45,6 +46,14 @@ router.get(
   authenticate,
   organizationAccess,
   getOrganizationMembersController,
+);
+
+router.get(
+  "/:organizationId/invitations",
+  authenticate,
+  organizationAccess,
+  authorizeOrganization("OWNER", "ADMIN"),
+  listInvitations,
 );
 
 router.post(
