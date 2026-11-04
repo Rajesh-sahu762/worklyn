@@ -59,6 +59,10 @@ const validateGetIssues = (query) => {
     return { error: "Invalid issue priority" };
   }
 
+  if (query.sprint !== undefined && query.sprint !== "none" && (typeof query.sprint !== "string" || !/^[a-f\\d]{24}$/i.test(query.sprint))) {
+    return { error: "Invalid sprint ID" };
+  }
+
   if (
     query.search !== undefined &&
     (
