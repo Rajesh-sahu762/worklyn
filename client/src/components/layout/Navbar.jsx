@@ -18,6 +18,8 @@ const TITLES = {
   "/": "Home",
   "/organizations/new": "New organization",
   "/projects": "Projects",
+  "/members": "Members",
+  "/invitations/accept": "Accept invitation"
 };
 
 const MOD = isMac ? "⌘" : "Ctrl";

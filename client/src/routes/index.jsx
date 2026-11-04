@@ -10,6 +10,8 @@ import AppShell from "../components/layout/AppShell";
 import ProjectOverviewPage from "../pages/ProjectOverviewPage";
 import ProjectIssuesPage from "../pages/ProjectIssuesPage";
 import IssueDetailPage from "../pages/IssueDetailPage";
+import OrganizationMembersPage from "../pages/OrganizationMembersPage";
+import AcceptInvitationPage from "../pages/AcceptInvitationPage";
 
 // Single place for the route table. As the app grows, split into
 // organizationRoutes.jsx, teamRoutes.jsx, ... and mount them here.
@@ -24,11 +26,32 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
           <Route path="/" element={<HomePage />} />
-          <Route path="/organizations/new" element={<CreateOrganizationPage />} />
+          <Route
+            path="/organizations/new"
+            element={<CreateOrganizationPage />}
+          />
           <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/projects/:projectId" element={<ProjectOverviewPage />} />
-          <Route path="/projects/:projectId/issues" element={<ProjectIssuesPage />} />
-          <Route path="/projects/:projectId/issues/:issueId" element={<IssueDetailPage />} />
+          <Route
+            path="/projects/:projectId"
+            element={<ProjectOverviewPage />}
+          />
+          <Route
+            path="/projects/:projectId/issues"
+            element={<ProjectIssuesPage />}
+          />
+          <Route
+            path="/projects/:projectId/issues/:issueId"
+            element={<IssueDetailPage />}
+          />
+          <Route path="/members" element={<OrganizationMembersPage />} />
+          <Route
+            path="/invitations/accept"
+            element={<AcceptInvitationPage />}
+          />
+          <Route
+            path="/invitations/:token"
+            element={<AcceptInvitationPage />}
+          />
         </Route>
       </Route>
 

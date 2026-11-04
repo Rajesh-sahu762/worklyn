@@ -250,6 +250,44 @@ export const createIssue = (projectId, payload) =>
     body: payload,
   }).then((r) => r.data?.issue ?? r.data);
 
+// GET /api/organization/:orgId/members -> { data: { members: [...] } }
+export const getOrgMembers = (orgId) =>
+  request(`/organization/${orgId}/members`).then((r) => r.data.members ?? []);
+
+// PATCH /api/organization/:orgId/members/:memberId/role  body: { role: "ADMIN" | "MEMBER" } (owner only)
+export const updateOrgMemberRole = (orgId, memberId, role) =>
+  request(`/organization/${orgId}/members/${memberId}/role`, { method: "PATCH", body: { role } })
+    .then((r) => r.data.member ?? r.data);
+
+// DELETE /api/organization/:orgId/members/:memberId (owner only)
+export const removeOrgMember = (orgId, memberId) =>
+  request(`/organization/${orgId}/members/${memberId}`, { method: "DELETE" });
+
+// The dev invitation link's key isn't documented; take the first link/url-like string.
+const linkOf = (d = {}) =>
+  d.invitationLink ?? d.inviteLink ?? d.link ?? d.url ??
+  Object.entries(d).find(([k, v]) => /link|url/i.test(k) && typeof v === "string")?.[1] ?? "";
+const invitationResult = (r) => ({ invitation: r.data.invitation ?? r.data, link: linkOf(r.data) });
+
+// POST /api/organization/:orgId/invitations  (owner/admin)
+export const createInvitation = (orgId, email, role) =>
+  request(`/organization/${orgId}/invitations`, { method: "POST", body: { email, role } }).then(invitationResult);
+
+// POST /api/organization/:orgId/invitations/:id/resend  (rotates token + expiry)
+export const resendInvitation = (orgId, id) =>
+  request(`/organization/${orgId}/invitations/${id}/resend`, { method: "POST" }).then(invitationResult);
+
+// DELETE /api/organization/:orgId/invitations/:id  (cancel pending)
+export const cancelInvitation = (orgId, id) =>
+  request(`/organization/${orgId}/invitations/${id}`, { method: "DELETE" });
+
+// POST /api/invitations/accept  body: { token }  (invitee must be signed in with the invited email)
+export const acceptInvitation = (token) =>
+  request("/invitations/accept", { method: "POST", body: { token } }).then((r) => ({
+    organization: r.data.organization ?? r.data,
+    role: r.data.role ?? r.data.membership?.role ?? "MEMBER",
+  }));
+
 
 
 

@@ -91,8 +91,8 @@ export function OrganizationProvider({ children }) {
   }, []);
 
   // After creating an organization: show it immediately and make it current.
-  const addOrganization = useCallback((raw) => {
-    const org = normalizeOrg({ organization: raw, role: "OWNER" });
+  const addOrganization = useCallback((raw, role = "OWNER") => {
+  const org = normalizeOrg({ organization: raw, role });
     if (!org.id) return;
     setOrgs((list) => [...list.filter((o) => o.id !== org.id), org]);
     setStoredId(org.id);

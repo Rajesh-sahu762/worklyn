@@ -255,112 +255,108 @@ export default function Sidebar({
         ))}
 
         {/* Projects Parent + Children */}
-       
-{/* Projects Parent + Children */}
-{currentOrg && (
-  <div>
-    {/* Projects Parent Row */}
-    <div
-      className={`flex min-h-10 items-center overflow-hidden rounded-control transition-colors ${
-        isProjectsActive
-          ? "bg-brand-lime text-black shadow-sm"
-          : "text-white/70 hover:bg-white/10 hover:text-white"
-      }`}
-    >
-      <NavLink
-        to="/projects"
-        title={collapsed ? "Projects" : undefined}
-        onClick={onCloseMobile}
-        className={`flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-sm font-medium ${
-          collapsed
-            ? "lg:justify-center lg:gap-0 lg:px-0"
-            : ""
-        }`}
-      >
-        <FolderIcon className="h-5 w-5 shrink-0" />
 
-        <span className={collapsed ? "lg:hidden" : ""}>
-          Projects
-        </span>
-      </NavLink>
-
-      {/* Chevron inside the same Projects row */}
-      <button
-        type="button"
-        onClick={() => setProjectsExpanded((value) => !value)}
-        aria-label={projectsExpanded ? "Collapse projects" : "Expand projects"}
-        aria-expanded={projectsExpanded}
-        className={`grid h-10 w-9 shrink-0 place-items-center transition-colors ${
-  isProjectsActive
-    ? "text-black/70 hover:text-black"
-    : "text-white/50 hover:text-white"
-} ${collapsed ? "lg:hidden" : ""}`}
-      >
-       <ChevronIcon
-  className={`h-4 w-4 transition-transform duration-200 ${
-    projectsExpanded ? "rotate-0" : "-rotate-90"
-  }`}
-/>
-      </button>
-    </div>
-
-    {/* Child Projects */}
-    {projectsExpanded && (
-      <div className={collapsed ? "lg:hidden" : ""}>
-        <div className="ml-5 mt-2 space-y-1 border-l border-white/15 pl-3">
-
-          {projectsStatus === "loading" && (
-            <div className="space-y-2 py-2">
-              {[0, 1].map((i) => (
-                <div
-                  key={i}
-                  className="h-7 animate-pulse rounded-md bg-white/10"
-                />
-              ))}
-            </div>
-          )}
-
-          {projectsStatus === "error" && (
-            <p className="py-2 text-xs text-[#ffad9d]">
-              {projectsError || "Couldn't load projects."}
-            </p>
-          )}
-
-          {projectsStatus === "ready" && projects.length === 0 && (
-            <p className="py-2 text-xs text-white/45">
-              No projects yet.
-            </p>
-          )}
-
-          {projectsStatus === "ready" && projects.length > 0 && (
-            <>
-              {projects.slice(0, 3).map((project) => (
-                <ProjectItem
-                  key={project.id}
-                  project={project}
-                  collapsed={false}
-                  onNavigate={onCloseMobile}
-                />
-              ))}
-
+        {/* Projects Parent + Children */}
+        {currentOrg && (
+          <div>
+            {/* Projects Parent Row */}
+            <div
+              className={`flex min-h-10 items-center overflow-hidden rounded-control transition-colors ${
+                isProjectsActive
+                  ? "bg-brand-lime text-black shadow-sm"
+                  : "text-white/70 hover:bg-white/10 hover:text-white"
+              }`}
+            >
               <NavLink
                 to="/projects"
+                title={collapsed ? "Projects" : undefined}
                 onClick={onCloseMobile}
-                className="flex min-h-8 items-center gap-2 rounded-md px-2 text-xs font-semibold text-brand-lime transition-colors hover:bg-white/10"
+                className={`flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-sm font-medium ${
+                  collapsed ? "lg:justify-center lg:gap-0 lg:px-0" : ""
+                }`}
               >
-                <span className="grid h-6 w-6 shrink-0 place-items-center text-base">
-                  +
-                </span>
-                View all projects
-              </NavLink>
-            </>
-          )}
-        </div>
-      </div>
-    )}
-  </div>
-)}
+                <FolderIcon className="h-5 w-5 shrink-0" />
 
+                <span className={collapsed ? "lg:hidden" : ""}>Projects</span>
+              </NavLink>
+
+              {/* Chevron inside the same Projects row */}
+              <button
+                type="button"
+                onClick={() => setProjectsExpanded((value) => !value)}
+                aria-label={
+                  projectsExpanded ? "Collapse projects" : "Expand projects"
+                }
+                aria-expanded={projectsExpanded}
+                className={`grid h-10 w-9 shrink-0 place-items-center transition-colors ${
+                  isProjectsActive
+                    ? "text-black/70 hover:text-black"
+                    : "text-white/50 hover:text-white"
+                } ${collapsed ? "lg:hidden" : ""}`}
+              >
+                <ChevronIcon
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    projectsExpanded ? "rotate-0" : "-rotate-90"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Child Projects */}
+            {projectsExpanded && (
+              <div className={collapsed ? "lg:hidden" : ""}>
+                <div className="ml-5 mt-2 space-y-1 border-l border-white/15 pl-3">
+                  {projectsStatus === "loading" && (
+                    <div className="space-y-2 py-2">
+                      {[0, 1].map((i) => (
+                        <div
+                          key={i}
+                          className="h-7 animate-pulse rounded-md bg-white/10"
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {projectsStatus === "error" && (
+                    <p className="py-2 text-xs text-[#ffad9d]">
+                      {projectsError || "Couldn't load projects."}
+                    </p>
+                  )}
+
+                  {projectsStatus === "ready" && projects.length === 0 && (
+                    <p className="py-2 text-xs text-white/45">
+                      No projects yet.
+                    </p>
+                  )}
+
+                  {projectsStatus === "ready" && projects.length > 0 && (
+                    <>
+                      {projects.slice(0, 3).map((project) => (
+                        <ProjectItem
+                          key={project.id}
+                          project={project}
+                          collapsed={false}
+                          onNavigate={onCloseMobile}
+                        />
+                      ))}
+
+                      <NavLink
+                        to="/projects"
+                        onClick={onCloseMobile}
+                        className="flex min-h-8 items-center gap-2 rounded-md px-2 text-xs font-semibold text-brand-lime transition-colors hover:bg-white/10"
+                      >
+                        <span className="grid h-6 w-6 shrink-0 place-items-center text-base">
+                          +
+                        </span>
+                        View all projects
+                      </NavLink>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </nav>
     </aside>
   );
