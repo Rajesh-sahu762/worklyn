@@ -10,7 +10,7 @@ const btn = "inline-flex rounded-control px-4 py-2.5 text-[15px] font-semibold f
 export default function AcceptInvitationPage() {
   const { token: pathToken } = useParams();
   const [params] = useSearchParams();
-  const token = pathToken ?? params.get("token") ?? "";
+  const token = pathToken ?? params.get("token") ?? params.get("inviteToken") ?? "";
   const { user, logout } = useAuth();
   const { addOrganization } = useOrganization();
   const navigate = useNavigate();
