@@ -21,6 +21,8 @@ import {
   updateIssueComment,
   deleteIssueComment,
   getIssueActivities,
+  getProjectMembers,
+  getTeams,
 } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -243,7 +245,11 @@ export default function IssueDetailPage() {
     description: "",
     type: "TASK",
     priority: "MEDIUM",
+    assignmentType: "none",
+    assigneeId: "",
+    assigneeTeamId: "",
   });
+  const [assignmentOptions, setAssignmentOptions] = useState({ members: [], teams: [] });
 
   const [savingIssue, setSavingIssue] = useState(false);
   const [issueActionError, setIssueActionError] = useState("");
@@ -256,13 +262,21 @@ export default function IssueDetailPage() {
     setPageError("");
 
     try {
-      const [projectResult, issueResult] = await Promise.all([
+      const [projectResult, issueResult, memberRows] = await Promise.all([
         getProject(projectId),
         getIssue(issueId),
+        getProjectMembers(projectId),
       ]);
 
       const projectData = projectResult?.project ?? projectResult;
       const issueData = issueResult?.issue ?? issueResult;
+      const teamRows = projectData.organization ? await getTeams(projectData.organization) : [];
+      const attachedTeamIds = (projectData.teams || []).map(team => String(typeof team === "object" ? team._id : team));
+      setAssignmentOptions({
+        members: (memberRows || []).filter(item => item.status === "ACTIVE" && item.user).map(item => item.user),
+        teams: (teamRows || []).filter(team => team.isActive && attachedTeamIds.includes(String(team._id || team.id))),
+      });
+
 
       setProject(projectData);
       setProjectRole(projectResult?.role ?? null);
@@ -273,6 +287,9 @@ export default function IssueDetailPage() {
         description: issueData.description || "",
         type: issueData.type || "TASK",
         priority: issueData.priority || "MEDIUM",
+        assignmentType: issueData.assignee ? "user" : issueData.assigneeTeam ? "team" : "none",
+        assigneeId: getId(issueData.assignee) || "",
+        assigneeTeamId: getId(issueData.assigneeTeam) || "",
       });
 
       setPageStatus("ready");
@@ -334,6 +351,8 @@ export default function IssueDetailPage() {
         description: editForm.description,
         type: editForm.type,
         priority: editForm.priority,
+        assignee: editForm.assignmentType === "user" ? editForm.assigneeId || null : null,
+        assigneeTeam: editForm.assignmentType === "team" ? editForm.assigneeTeamId || null : null,
       });
 
       const updatedIssue = updated?.issue ?? updated;
@@ -572,6 +591,26 @@ export default function IssueDetailPage() {
                       ))}
                     </select>
                   </Field>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Assignment type">
+                    <select value={editForm.assignmentType} onChange={event => setEditForm(current => ({ ...current, assignmentType: event.target.value, assigneeId: "", assigneeTeamId: "" }))} className={inputClass}>
+                      <option value="none">Unassigned</option><option value="user">Individual user</option><option value="team">Team</option>
+                    </select>
+                  </Field>
+                  {editForm.assignmentType === "user" && <Field label="Assignee">
+                    <select value={editForm.assigneeId} onChange={event => setEditForm(current => ({ ...current, assigneeId: event.target.value }))} className={inputClass}>
+                      <option value="">Select project member</option>
+                      {assignmentOptions.members.map(member => <option key={member._id} value={member._id}>{getPersonName(member)}</option>)}
+                    </select>
+                  </Field>}
+                  {editForm.assignmentType === "team" && <Field label="Assign team">
+                    <select value={editForm.assigneeTeamId} onChange={event => setEditForm(current => ({ ...current, assigneeTeamId: event.target.value }))} className={inputClass}>
+                      <option value="">Select project team</option>
+                      {assignmentOptions.teams.map(team => <option key={team._id || team.id} value={team._id || team.id}>{team.name}</option>)}
+                    </select>
+                  </Field>}
                 </div>
 
                 <div className="flex justify-end gap-2">
@@ -843,7 +882,7 @@ export default function IssueDetailPage() {
 
               <Field label="Assignee">
                 <span className="text-sm text-ink">
-                  {getPersonName(issue.assignee)}
+                  {issue.assigneeTeam?.name || (issue.assignee ? getPersonName(issue.assignee) : "Unassigned")}
                 </span>
               </Field>
 
