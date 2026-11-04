@@ -409,3 +409,32 @@ Use this README as the source of truth for the code inspected on the date above.
 ## MASTER CONTEXT FOR CHATGPT, CLAUDE AND GOOGLE STITCH
 
 Read this entire README before proposing a design. Treat the documented current implementation as the source of truth and inspect source files when a critical detail is missing. Preserve existing API contracts and authentication behavior, including bearer access tokens and the HttpOnly refresh-token cookie. Create a cohesive, distinctive Worklyn design system that is creative and modern without sacrificing usability, readable contrast, comfortable colors, or long-session use. Avoid a generic Jira clone, a Jira reskin, and repetitive dashboard templates. Design the application shell and key product pages consistently, using reusable React-friendly components. For each page, provide layout, component hierarchy, interactions, responsive behavior, accessibility behavior, loading/error/empty/success states, and acceptance criteria. Clearly distinguish implemented features from planned features. Do not invent data, routes, fields, or backend capabilities. Request source-code inspection only when a critical detail is missing. Do not change the backend unless a required capability is confirmed missing and the backend change is separately approved. A project type of SCRUM or KANBAN does not mean that a board or sprint feature already exists.
+
+---
+
+## 22. Frontend implementation update — 4 November 2026
+
+This section records follow-up implementation work added after the original repository-grounded UI brief. It supersedes earlier statements in this document that described the frontend as a placeholder or organization/project pages as missing. Source code has been committed, but runtime/build verification is still pending.
+
+### Organization
+- `/members`: organization member management and invitation history in separate tabs. Invitation history is persisted through `GET /api/organization/:organizationId/invitations?page=&limit=`, sorted newest first and paginated in batches of five. Invitation token hashes are excluded from list responses. Expired pending invitations are marked expired during history retrieval.
+- `/settings/organization`: organization details editing (name, description, logo URL), owner-only ownership transfer, and member leave action. Existing organization detail/update/leave/transfer endpoints are reused.
+- Sidebar organization settings navigation is enabled.
+
+### Project
+- `/projects/:projectId/backlog`: backlog-only issue list, client-side search and issue-type filter, 20-row progressive reveal, and the supported BACKLOG → TODO transition. The current list fetches at most 100 issues; it does not claim ranking, drag/drop, sprint planning, or server-side backlog pagination.
+- `/projects/:projectId/members`: active project member listing, add organization members as project MEMBER/VIEWER, change non-admin member roles, and remove members. A new protected project-member listing endpoint was added.
+- `/projects/:projectId/settings`: project name, description and avatar URL editing for PROJECT_ADMIN. Project key and project type are read-only. A protected PATCH `/api/projects/:projectId` endpoint was added for these fields.
+
+### New and updated API client methods
+- Organization: `getOrganization`, `updateOrganization`, `transferOrganizationOwnership`, `leaveOrganization`, `getOrgInvitations`.
+- Project: `getProjectMembers`, `addProjectMember`, `updateProjectMemberRole`, `removeProjectMember`, `updateProject`.
+
+### Remaining planned work
+- Teams API and management UI (Team/TeamMember models exist but have no workflow endpoints).
+- Scrum/Kanban board and sprint planning require persisted ordering, sprint membership, board queries and permissions before the UI is considered complete.
+- Notifications, reports/analytics, attachments, global search expansion, profile/preferences and final responsive/accessibility review remain planned.
+- The Home dashboard already includes assigned/recommended/worked-on issue views; a separate duplicate “My Work” page should not be created without a distinct workflow requirement.
+
+### Verification note
+No local `npm run build`, lint, API integration test or live MongoDB workflow test was executed as part of these GitHub source edits. Do not treat these features as runtime-verified until client build/lint and authenticated end-to-end checks pass.
