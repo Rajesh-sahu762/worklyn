@@ -44,6 +44,14 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
+    preferences: {
+      notifications: {
+        ISSUE_ASSIGNED: { type: Boolean, default: true },
+        ISSUE_STATUS_CHANGED: { type: Boolean, default: true },
+        ISSUE_COMMENTED: { type: Boolean, default: true },
+      },
+    },
+
     isVerified: {
       type: Boolean,
       default: false,
