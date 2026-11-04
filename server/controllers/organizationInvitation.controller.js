@@ -119,6 +119,20 @@ const acceptInvitation = async (req, res) => {
   }
 };
 
+const listInvitations = async (req, res) => {
+  try {
+    const result = await getOrganizationInvitations({
+      organizationId: req.params.organizationId,
+      page: req.query.page,
+      limit: req.query.limit,
+    });
+
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const cancelInvitation = async (req, res) => {
   try {
     const invitation =
