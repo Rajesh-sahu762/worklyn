@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Settings as SettingsIcon } from "lucide-react";
 import { NavLink, useLocation } from "react-router";
 import { useOrganization } from "../../context/OrganizationContext";
 import { FEATURES } from "../../lib/features";
