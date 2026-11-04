@@ -256,7 +256,10 @@ const updateIssue = async ({
   }
 
   // 2. Validate requested fields
-  const fields = Object.keys(updates);
+  const effectiveUpdates = { ...updates };
+  if (updates.assignee) effectiveUpdates.assigneeTeam = null;
+  if (updates.assigneeTeam) effectiveUpdates.assignee = null;
+  const fields = Object.keys(effectiveUpdates);
 
   if (
     fields.length === 0 ||
@@ -382,7 +385,7 @@ const updateIssue = async ({
 
   // Capture old values BEFORE modifying the issue
   for (const field of fields) {
-    let newValue = updates[field];
+    let newValue = effectiveUpdates[field];
 
     if ((field === "assignee" || field === "assigneeTeam") && (newValue === "" || newValue === null)) {
       newValue = null;
@@ -408,7 +411,7 @@ const updateIssue = async ({
 
   // 7. Apply changes only after capturing history
   for (const field of fields) {
-    let value = updates[field];
+    let value = effectiveUpdates[field];
 
     if ((field === "assignee" || field === "assigneeTeam") && (value === "" || value === null)) {
       value = null;
