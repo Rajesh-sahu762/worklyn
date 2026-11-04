@@ -269,6 +269,13 @@ const linkOf = (d = {}) =>
   Object.entries(d).find(([k, v]) => /link|url/i.test(k) && typeof v === "string")?.[1] ?? "";
 const invitationResult = (r) => ({ invitation: r.data.invitation ?? r.data, link: linkOf(r.data) });
 
+// GET /api/organization/:orgId/invitations?page=&limit= (owner/admin)
+export const getOrgInvitations = (orgId, page = 1, limit = 5) =>
+  request(`/organization/${orgId}/invitations?page=${page}&limit=${limit}`).then((r) => ({
+    invitations: r.data.invitations ?? [],
+    pagination: r.data.pagination ?? { page, limit, total: 0, totalPages: 1 },
+  }));
+
 // POST /api/organization/:orgId/invitations  (owner/admin)
 export const createInvitation = (orgId, email, role) =>
   request(`/organization/${orgId}/invitations`, { method: "POST", body: { email, role } }).then(invitationResult);
