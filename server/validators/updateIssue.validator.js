@@ -23,6 +23,7 @@ const ALLOWED_FIELDS = [
   "priority",
   "type",
   "assignee",
+  "assigneeTeam",
   "labels",
   "dueDate",
   "estimate",
@@ -85,6 +86,10 @@ const validateUpdateIssue = (body) => {
   ) {
     return { error: "Invalid assignee ID" };
   }
+
+  if (body.assigneeTeam !== undefined && body.assigneeTeam !== null && body.assigneeTeam !== "" && (typeof body.assigneeTeam !== "string" || !/^[a-f\\d]{24}$/i.test(body.assigneeTeam))) return { error: "Invalid team ID" };
+
+  if (body.assignee !== undefined && body.assigneeTeam !== undefined && body.assignee && body.assigneeTeam) return { error: "Choose an individual or a team, not both" };
 
   if (body.labels !== undefined) {
     if (
