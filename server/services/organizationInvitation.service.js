@@ -201,6 +201,39 @@ const cancelOrganizationInvitation = async ({
 };
 
 
+const getOrganizationInvitations = async ({ organizationId, page = 1, limit = 5 }) => {
+  const safePage = Math.max(1, Number.parseInt(page, 10) || 1);
+  const safeLimit = Math.min(20, Math.max(1, Number.parseInt(limit, 10) || 5));
+  const now = new Date();
+
+  await OrganizationInvitation.updateMany(
+    { organization: organizationId, status: "PENDING", expiresAt: { $lte: now } },
+    { $set: { status: "EXPIRED" } }
+  );
+
+  const filter = { organization: organizationId };
+  const [invitations, total] = await Promise.all([
+    OrganizationInvitation.find(filter)
+      .select("-tokenHash")
+      .populate("invitedBy", "firstName lastName email")
+      .sort({ createdAt: -1, _id: -1 })
+      .skip((safePage - 1) * safeLimit)
+      .limit(safeLimit)
+      .lean(),
+    OrganizationInvitation.countDocuments(filter),
+  ]);
+
+  return {
+    invitations,
+    pagination: {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / safeLimit)),
+    },
+  };
+};
+
 const resendOrganizationInvitation = async ({
   organizationId,
   invitationId,
