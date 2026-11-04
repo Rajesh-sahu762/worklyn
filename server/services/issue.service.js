@@ -4,138 +4,87 @@ const Issue = require("../models/Issue");
 const Project = require("../models/Project");
 const ProjectMember = require("../models/ProjectMember");
 const OrganizationMember = require("../models/OrganizationMember");
+const Team = require("../models/Team");
+const TeamMember = require("../models/TeamMember");
+const Sprint = require("../models/Sprint");
 const { createNotifications } = require("./notification.service");
 
 const createIssue = async ({
-  projectId,
-  reporterId,
-  title,
-  description,
-  type,
-  priority,
-  assigneeId,
-  parentIssueId,
-  labels,
-  dueDate,
-  estimate,
+  projectId, reporterId, title, description, type, priority, status,
+  assigneeId, assigneeTeamId, sprintId, parentIssueId, labels, dueDate, estimate,
 }) => {
-  // 1. Verify project exists and is active
-  const project = await Project.findOne({
-    _id: projectId,
-    status: "ACTIVE",
-  });
+  const project = await Project.findOne({ _id: projectId, status: "ACTIVE" });
+  if (!project) throw new Error("Project not found");
 
-  if (!project) {
-    throw new Error("Project not found");
-  }
-
-  // 2. Validate assignee if supplied
+  let teamRecipients = [];
   if (assigneeId) {
-    if (!mongoose.Types.ObjectId.isValid(assigneeId)) {
-      throw new Error("Invalid assignee ID");
-    }
+    if (!mongoose.isValidObjectId(assigneeId)) throw new Error("Invalid assignee ID");
+    const [projectMembership, organizationMembership] = await Promise.all([
+      ProjectMember.findOne({ project: projectId, user: assigneeId, status: "ACTIVE" }),
+      OrganizationMember.findOne({ organization: project.organization, user: assigneeId, status: "ACTIVE" }),
+    ]);
+    if (!projectMembership || !organizationMembership) throw new Error("Assignee must be an active project and organization member");
+  }
+  if (assigneeTeamId) {
+    if (!mongoose.isValidObjectId(assigneeTeamId)) throw new Error("Invalid team ID");
+    const attached = (project.teams || []).some(id => String(id) === String(assigneeTeamId));
+    const team = await Team.findOne({ _id: assigneeTeamId, organization: project.organization, isActive: true });
+    if (!attached || !team) throw new Error("Team must be active and assigned to this project");
+    const members = await TeamMember.find({ team: assigneeTeamId, status: "ACTIVE" }).select("user").lean();
+    const ids = members.map(m => m.user);
+    const memberships = ids.length ? await ProjectMember.find({
+      project: projectId, user: { $in: ids }, status: "ACTIVE",
+    }).select("user").lean() : [];
+    teamRecipients = memberships.map(m => m.user);
+    if (!teamRecipients.length) throw new Error("Selected team has no active project members");
+  }
+  if (assigneeId && assigneeTeamId) throw new Error("Choose an individual or a team, not both");
 
-    const assigneeMembership = await ProjectMember.findOne({
-      project: projectId,
-      user: assigneeId,
-      status: "ACTIVE",
-    });
-
-    if (!assigneeMembership) {
-      throw new Error("Assignee must be an active project member");
-    }
-
-    const organizationMembership = await OrganizationMember.findOne({
-      organization: project.organization,
-      user: assigneeId,
-      status: "ACTIVE",
-    });
-
-    if (!organizationMembership) {
-      throw new Error("Assignee must be an active organization member");
-    }
+  if (sprintId) {
+    if (!mongoose.isValidObjectId(sprintId)) throw new Error("Invalid sprint ID");
+    const sprint = await Sprint.findOne({ _id: sprintId, project: projectId, status: { $ne: "COMPLETED" } });
+    if (!sprint) throw new Error("Sprint must belong to this project and be active or planned");
   }
 
-  // 3. Validate parent issue, if supplied
   if (parentIssueId) {
-    if (!mongoose.Types.ObjectId.isValid(parentIssueId)) {
-      throw new Error("Invalid parent issue ID");
-    }
-
-    if (type !== "SUB_TASK") {
-      throw new Error("Only sub-tasks can have a parent issue");
-    }
-
-    const parentIssue = await Issue.findOne({
-      _id: parentIssueId,
-      project: projectId,
-      archivedAt: null,
-    });
-
-    if (!parentIssue) {
-      throw new Error("Parent issue not found in this project");
-    }
-
-    if (parentIssue.type === "SUB_TASK") {
-      throw new Error("A sub-task cannot be the parent of another sub-task");
-    }
+    if (!mongoose.isValidObjectId(parentIssueId)) throw new Error("Invalid parent issue ID");
+    if (type !== "SUB_TASK") throw new Error("Only sub-tasks can have a parent issue");
+    const parentIssue = await Issue.findOne({ _id: parentIssueId, project: projectId, archivedAt: null });
+    if (!parentIssue) throw new Error("Parent issue not found in this project");
+    if (parentIssue.type === "SUB_TASK") throw new Error("A sub-task cannot be the parent of another sub-task");
   } else if (type === "SUB_TASK") {
     throw new Error("A parent issue is required for sub-tasks");
   }
 
-  // 4. Atomically reserve the next issue number
   const updatedProject = await Project.findOneAndUpdate(
-    {
-      _id: projectId,
-      status: "ACTIVE",
-    },
-    {
-      $inc: { issueCounter: 1 },
-    },
-    {
-      new: true,
-      runValidators: true,
-    },
+    { _id: projectId, status: "ACTIVE" }, { $inc: { issueCounter: 1 } },
+    { new: true, runValidators: true },
   );
+  if (!updatedProject) throw new Error("Project not found");
 
-  if (!updatedProject) {
-    throw new Error("Project not found");
-  }
-
-  const issueNumber = updatedProject.issueCounter;
-  const issueKey = `${updatedProject.key}-${issueNumber}`;
-
-  // 5. Create issue
-  const issue = await Issue.create({
-    organization: updatedProject.organization,
-    project: updatedProject._id,
-    issueNumber,
-    issueKey,
-    title: title.trim(),
-    description: description?.trim() || "",
-    type,
-    priority: priority || "MEDIUM",
-    reporter: reporterId,
-    assignee: assigneeId || null,
-    parentIssue: parentIssueId || null,
-    labels: labels || [],
-    dueDate: dueDate || null,
+  const [issue] = await Issue.create([{
+    organization: updatedProject.organization, project: updatedProject._id,
+    issueNumber: updatedProject.issueCounter, issueKey: `${updatedProject.key}-${updatedProject.issueCounter}`,
+    title: title.trim(), description: description?.trim() || "", type,
+    priority: priority || "MEDIUM", status: status || "TODO", reporter: reporterId,
+    assignee: assigneeId || null, assigneeTeam: assigneeTeamId || null,
+    sprint: sprintId || null, parentIssue: parentIssueId || null,
+    labels: (labels || []).map(label => label.trim()), dueDate: dueDate || null,
     estimate: estimate ?? null,
-  });
+  }]);
 
-  if (assigneeId) {
-    await createNotifications([{
-      recipientId: assigneeId,
-      actorId: reporterId,
-      organizationId: issue.organization,
-      projectId: issue.project,
-      issueId: issue._id,
-      type: "ISSUE_ASSIGNED",
-      message: `You were assigned ${issue.issueKey}`,
-    }]);
-  }
-
-  return issue;
+  const recipients = assigneeId ? [assigneeId] : teamRecipients;
+  if (recipients.length) await createNotifications(recipients.map(recipientId => ({
+    recipientId, actorId: reporterId, organizationId: issue.organization,
+    projectId: issue.project, issueId: issue._id, type: "ISSUE_ASSIGNED",
+    message: `${issue.issueKey} was assigned to ${assigneeId ? "you" : "your team"}`,
+  })));
+  return Issue.findById(issue._id)
+    .populate("reporter", "firstName lastName email profileImage")
+    .populate("assignee", "firstName lastName email profileImage")
+    .populate("assigneeTeam", "name")
+    .populate("sprint", "name status")
+    .lean();
 };
 
 const getProjectIssues = async ({
@@ -197,6 +146,8 @@ const getProjectIssues = async ({
     Issue.find(filter)
       .populate("reporter", "firstName lastName email")
       .populate("assignee", "firstName lastName email profileImage")
+      .populate("assigneeTeam", "name")
+      .populate("sprint", "name status")
       .populate("parentIssue", "issueKey title")
       .sort({ updatedAt: -1, _id: -1 })
       .skip(skip)
