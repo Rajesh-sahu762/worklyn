@@ -438,3 +438,30 @@ This section records follow-up implementation work added after the original repo
 
 ### Verification note
 No local `npm run build`, lint, API integration test or live MongoDB workflow test was executed as part of these GitHub source edits. Do not treat these features as runtime-verified until client build/lint and authenticated end-to-end checks pass.
+
+## 23. Teams management implementation — 4 November 2026
+
+### Backend
+- Added organization-scoped team routes mounted under `/api`.
+- Added team service operations for list, detail, create, update, archive and membership management.
+- Added `teamAccess` to ensure a team belongs to the organization in the URL and is active.
+- Added `authorizeTeam`: organization OWNER/ADMIN can manage teams; team leads can manage team details and membership.
+- Team creation automatically assigns its creator as the first TEAM_LEAD.
+- Only active organization members can be added to a team. Removed memberships can be reactivated instead of creating duplicate records.
+- A team must retain at least one active TEAM_LEAD; demoting or removing the last lead is rejected.
+
+### Frontend
+- `/teams`: searchable team directory, member counts and organization-admin team creation.
+- `/teams/:teamId`: team details, edit form, member list, add members, change roles, remove members and archive action.
+- Team navigation is enabled in the sidebar and organization-aware page titles are added.
+
+### API client
+- `getTeams`, `createTeam`, `getTeam`, `updateTeam`, `archiveTeam`, `getTeamMembers`, `addTeamMember`, `updateTeamMemberRole`, `removeTeamMember`.
+
+### Verification status
+Source changes are committed. No local build, lint, automated tests or live API/database verification has been run in this editing session. Verify the team flows with organization OWNER/ADMIN, TEAM_LEAD and regular MEMBER accounts before treating them as production-ready.
+
+### Next implementation phase
+- Scrum/Kanban board foundations: persisted board columns/order, board query APIs, issue movement and permission enforcement.
+- Sprint planning: sprint lifecycle, backlog-to-sprint assignment, start/complete flows and sprint issue views.
+- Notifications, global search, reports, profile/preferences, attachments and final QA remain after board and sprint foundations.
