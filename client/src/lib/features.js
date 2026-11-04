@@ -3,7 +3,7 @@
 export const FEATURES = {
   recent: false,
   starred: false,
-  notifications: false,
+  notifications: true,
   projectsList: true,
   projectPages: true,   // routes: /projects/:projectId
   teams: true,
