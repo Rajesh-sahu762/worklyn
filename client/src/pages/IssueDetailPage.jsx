@@ -270,7 +270,7 @@ export default function IssueDetailPage() {
 
       const projectData = projectResult?.project ?? projectResult;
       const issueData = issueResult?.issue ?? issueResult;
-      const teamRows = projectData.organization ? await getTeams(projectData.organization) : [];
+      const teamRows = projectData.organization ? await getTeams(projectData.organization).catch(() => []) : [];
       const attachedTeamIds = (projectData.teams || []).map(team => String(typeof team === "object" ? team._id : team));
       setAssignmentOptions({
         members: (memberRows || []).filter(item => item.status === "ACTIVE" && item.user).map(item => item.user),
