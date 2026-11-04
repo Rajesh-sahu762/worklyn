@@ -511,3 +511,20 @@ Source changes are committed. No build, lint, automated integration tests or liv
 - Event types are assignment, status change and comment. @mentions, project watchers, team-level notifications, email/push delivery, notification preferences and real-time updates are not implemented.
 - The inbox uses paginated polling-on-navigation/refresh, not WebSockets or background polling.
 - Source changes are committed but have not been run through build/lint or live MongoDB/API integration tests in this editing session.
+
+## 28. User profile and notification preferences — 4 November 2026
+
+### Backend
+- Added authenticated `PATCH /api/profile` for first name, last name, mobile number and profile image URL. Email remains read-only. Profile image URLs must use HTTPS; this release accepts a URL and does not implement file upload.
+- Added authenticated `PATCH /api/profile/preferences` for in-app issue assignment, issue status-change and issue comment notification preferences.
+- Added persisted `User.preferences.notifications` fields with enabled-by-default values for existing and new users.
+- Notification creation checks each recipient's preferences before inserting notifications. Preference lookup and notification insertion remain best-effort and must not block issue/comment actions.
+
+### Frontend
+- Added `/settings/profile`, linked from the account menu, with personal information editing, image URL preview, and notification preference controls.
+- Added API client methods and `AuthContext.updateUser` so successful edits update the active session immediately.
+- Added the profile settings page title to the navbar.
+
+### Scope and verification
+- Email changes, password changes, avatar file uploads, theme preferences, locale/timezone preferences and email/push notification delivery are not part of this implementation.
+- Source files and route wiring were checked through GitHub after commits. A local frontend build, backend test suite and live API/MongoDB integration test have not been run in this session.
