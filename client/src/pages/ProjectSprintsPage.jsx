@@ -9,6 +9,7 @@ import {
   getProjectIssues,
   getSprints,
   startSprint,
+  updateSprint,
 } from "../lib/api";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { Field, inputClass } from "../components/AuthShell";
@@ -17,11 +18,11 @@ const idOf = (item) => item?._id ?? item?.id;
 const label = (value = "") => String(value).toLowerCase().replaceAll("_", " ").replace(/^\w/, (letter) => letter.toUpperCase());
 const dateLabel = (value) => value ? new Date(value).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "Not set";
 
-function SprintForm({ onCreate, saving }) {
-  const [name, setName] = useState("");
-  const [goal, setGoal] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+function SprintForm({ initial, onCreate, onCancel, saving }) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [goal, setGoal] = useState(initial?.goal ?? "");
+  const [startDate, setStartDate] = useState(initial?.startDate ? new Date(initial.startDate).toISOString().slice(0, 10) : "");
+  const [endDate, setEndDate] = useState(initial?.endDate ? new Date(initial.endDate).toISOString().slice(0, 10) : "");
   const [error, setError] = useState("");
 
   async function submit(event) {
@@ -36,12 +37,12 @@ function SprintForm({ onCreate, saving }) {
   }
 
   return <form onSubmit={submit} className="space-y-4 rounded-panel border border-line bg-surface p-5">
-    <div><h2 className="font-semibold text-ink">Create a sprint</h2><p className="mt-1 text-xs text-ink-muted">Plan a focused iteration for this Scrum project.</p></div>
+    <div><h2 className="font-semibold text-ink">{initial ? "Edit planned sprint" : "Create a sprint"}</h2><p className="mt-1 text-xs text-ink-muted">Plan a focused iteration for this Scrum project.</p></div>
     {error && <p role="alert" className="text-sm text-danger">{error}</p>}
     <Field id="sprint-name" label="Sprint name"><input id="sprint-name" required minLength={2} maxLength={100} value={name} onChange={(event) => setName(event.target.value)} className={inputClass(false)} placeholder="e.g. Sprint 01" /></Field>
     <Field id="sprint-goal" label="Sprint goal" hint={`Optional · ${goal.length}/500`}><textarea id="sprint-goal" rows={2} maxLength={500} value={goal} onChange={(event) => setGoal(event.target.value)} className={inputClass(false)} placeholder="What should the team achieve?" /></Field>
     <div className="grid gap-3 sm:grid-cols-2"><Field id="sprint-start" label="Start date"><input id="sprint-start" type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className={inputClass(false)} /></Field><Field id="sprint-end" label="End date"><input id="sprint-end" type="date" min={startDate || undefined} value={endDate} onChange={(event) => setEndDate(event.target.value)} className={inputClass(false)} /></Field></div>
-    <div className="flex justify-end"><button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-control bg-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-accent-strong disabled:opacity-50">{saving ? <LoaderCircle size={15} className="animate-spin" /> : <Plus size={15} />}{saving ? "Creating…" : "Create sprint"}</button></div>
+    <div className="flex justify-end gap-2">{onCancel && <button type="button" onClick={onCancel} disabled={saving} className="rounded-control border border-line px-4 py-2.5 text-sm text-ink-muted hover:bg-surface-subtle">Cancel</button>}<button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-control bg-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-accent-strong disabled:opacity-50">{saving ? <LoaderCircle size={15} className="animate-spin" /> : <Plus size={15} />}{saving ? "Saving…" : initial ? "Save sprint" : "Create sprint"}</button></div>
   </form>;
 }
 
@@ -56,6 +57,7 @@ export default function ProjectSprintsPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [editingSprint, setEditingSprint] = useState(null);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const [confirmSprint, setConfirmSprint] = useState(null);
@@ -89,15 +91,22 @@ export default function ProjectSprintsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  async function makeSprint(payload) {
+  async function saveSprint(payload) {
     setSaving(true);
     try {
-      await createSprint(projectId, payload);
-      setShowCreate(false);
+      if (editingSprint) {
+        await updateSprint(projectId, idOf(editingSprint), payload);
+        setEditingSprint(null);
+        setNotice("Planned sprint updated.");
+      } else {
+        await createSprint(projectId, payload);
+        setShowCreate(false);
+        setNotice("Sprint created. Add backlog issues, then start it when the team is ready.");
+      }
       await load();
-      setNotice("Sprint created. Add backlog issues, then start it when the team is ready.");
     } finally { setSaving(false); }
   }
+
 
   async function start(sprint) {
     setBusyId(idOf(sprint));
@@ -144,10 +153,10 @@ export default function ProjectSprintsPage() {
 
   return <div className="mx-auto max-w-6xl space-y-6">
     <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-2 text-sm text-ink-muted"><Link to={`/projects/${projectId}`} className="inline-flex items-center gap-1.5 hover:text-ink"><ArrowLeft size={15} />{project?.name ?? "Project"}</Link><span>/</span><span className="font-medium text-ink">Sprints</span></div><div className="flex gap-2"><Link to={`/projects/${projectId}/backlog`} className="rounded-control border border-line bg-surface px-3 py-2 text-xs font-semibold text-ink hover:bg-surface-subtle">Backlog</Link><Link to={`/projects/${projectId}/board`} className="rounded-control border border-line bg-surface px-3 py-2 text-xs font-semibold text-ink hover:bg-surface-subtle">Board</Link></div></div>
-    <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">{project?.key ?? "Project"} · Scrum planning</p><h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">Sprint planning</h1><p className="mt-2 text-sm text-ink-muted">Plan iterations, commit backlog work and review completed delivery.</p></div>{canManage && <button type="button" onClick={() => setShowCreate((value) => !value)} className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-control bg-accent px-4 text-sm font-semibold text-white hover:bg-accent-strong"><Plus size={15} /> Plan sprint</button>}</header>
+    <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">{project?.key ?? "Project"} · Scrum planning</p><h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">Sprint planning</h1><p className="mt-2 text-sm text-ink-muted">Plan iterations, commit backlog work and review completed delivery.</p></div>{canManage && <button type="button" onClick={() => { setEditingSprint(null); setShowCreate((value) => !value); }} className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-control bg-accent px-4 text-sm font-semibold text-white hover:bg-accent-strong"><Plus size={15} /> Plan sprint</button>}</header>
     {error && <p role="alert" className="rounded-control border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">{error}</p>}
     {notice && <p role="status" className="flex items-center gap-2 rounded-control border border-line bg-surface px-4 py-3 text-sm text-ink-muted"><Check size={15} />{notice}</p>}
-    {showCreate && <SprintForm onCreate={makeSprint} saving={saving} />}
+    {(showCreate || editingSprint) && <SprintForm initial={editingSprint} onCreate={saveSprint} onCancel={() => { setShowCreate(false); setEditingSprint(null); }} saving={saving} />}
 
     {activeSprint ? <section className="overflow-hidden rounded-panel border border-accent-support/30 bg-surface">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-status-progress" /><span className="text-xs font-semibold uppercase tracking-[0.14em] text-status-progress">Active sprint</span></div>{canManage && <button type="button" onClick={() => setConfirmSprint(activeSprint)} disabled={busyId === idOf(activeSprint)} className="rounded-control border border-danger/25 px-3 py-2 text-xs font-semibold text-danger hover:bg-danger/5 disabled:opacity-50">Complete sprint</button>}</div>
@@ -158,7 +167,7 @@ export default function ProjectSprintsPage() {
 
     <section className="overflow-hidden rounded-panel border border-line bg-surface"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4"><div><h2 className="font-semibold text-ink">Backlog ready for sprint</h2><p className="mt-0.5 text-xs text-ink-muted">{backlog.length} unassigned backlog issues</p></div><span className="text-xs text-ink-faint">{canManage ? "Assign issues to a planned or active sprint" : "Only project admins can plan sprint work"}</span></div>{backlog.length === 0 ? <p className="px-5 py-10 text-center text-sm text-ink-muted">No unassigned backlog issues. Add work from the project backlog.</p> : <ul className="divide-y divide-line">{backlog.map((issue) => <li key={idOf(issue)} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"><div className="min-w-0"><span className="font-mono text-[10px] text-ink-faint">{issue.issueKey}</span><Link to={`/projects/${projectId}/issues/${idOf(issue)}`} className="ml-2 text-sm font-semibold text-ink hover:text-accent-support">{issue.title}</Link></div>{canManage && <label className="flex items-center gap-2 text-xs text-ink-muted"><span className="sr-only">Assign {issue.issueKey} to sprint</span><select aria-label={`Assign ${issue.issueKey} to sprint`} disabled={busyId === idOf(issue) || (!activeSprint && plannedSprints.length === 0)} value="" onChange={(event) => event.target.value && assign(issue, event.target.value)} className="h-9 min-w-44 rounded-control border border-line bg-surface px-2.5 text-xs text-ink"><option value="">Add to sprint…</option>{activeSprint && <option value={idOf(activeSprint)}>{activeSprint.name} (Active)</option>}{plannedSprints.map((sprint) => <option key={idOf(sprint)} value={idOf(sprint)}>{sprint.name}</option>)}</select></label>}</li>)}</ul>}</section>
 
-    <section className="space-y-3"><div className="flex items-center justify-between"><div><h2 className="font-semibold text-ink">Planned sprints</h2><p className="mt-0.5 text-xs text-ink-muted">{plannedSprints.length} planned · {totalPlanned} assigned issues</p></div></div>{plannedSprints.length === 0 ? <div className="rounded-panel border border-line bg-surface px-5 py-8 text-center text-sm text-ink-muted">No planned sprints yet.</div> : plannedSprints.map((sprint) => <article key={idOf(sprint)} className="flex flex-col gap-3 rounded-panel border border-line bg-surface p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"><div className="min-w-0"><h3 className="font-semibold text-ink">{sprint.name}</h3><p className="mt-1 line-clamp-2 text-sm text-ink-muted">{sprint.goal || "No sprint goal added."}</p><p className="mt-2 text-xs text-ink-faint">{dateLabel(sprint.startDate)} – {dateLabel(sprint.endDate)} · {issuesBySprint[idOf(sprint)]?.length ?? 0} issues</p></div>{canManage && <button type="button" onClick={() => start(sprint)} disabled={!!busyId || (activeSprint && activeSprint._id !== sprint._id)} className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-control border border-line px-3 text-xs font-semibold text-ink hover:bg-surface-subtle disabled:opacity-50"><Rocket size={14} />{busyId === idOf(sprint) ? "Starting…" : "Start sprint"}</button>}</article>)}</section>
+    <section className="space-y-3"><div className="flex items-center justify-between"><div><h2 className="font-semibold text-ink">Planned sprints</h2><p className="mt-0.5 text-xs text-ink-muted">{plannedSprints.length} planned · {totalPlanned} assigned issues</p></div></div>{plannedSprints.length === 0 ? <div className="rounded-panel border border-line bg-surface px-5 py-8 text-center text-sm text-ink-muted">No planned sprints yet.</div> : plannedSprints.map((sprint) => <article key={idOf(sprint)} className="flex flex-col gap-3 rounded-panel border border-line bg-surface p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"><div className="min-w-0"><h3 className="font-semibold text-ink">{sprint.name}</h3><p className="mt-1 line-clamp-2 text-sm text-ink-muted">{sprint.goal || "No sprint goal added."}</p><p className="mt-2 text-xs text-ink-faint">{dateLabel(sprint.startDate)} – {dateLabel(sprint.endDate)} · {issuesBySprint[idOf(sprint)]?.length ?? 0} issues</p></div>{canManage && <div className="flex shrink-0 gap-2"><button type="button" onClick={() => { setShowCreate(false); setEditingSprint(sprint); }} className="rounded-control border border-line px-3 py-2 text-xs font-semibold text-ink hover:bg-surface-subtle">Edit</button><button type="button" onClick={() => start(sprint)} disabled={!!busyId || (activeSprint && activeSprint._id !== sprint._id)} className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-control border border-line px-3 text-xs font-semibold text-ink hover:bg-surface-subtle disabled:opacity-50"><Rocket size={14} />{busyId === idOf(sprint) ? "Starting…" : "Start sprint"}</button></div>}</article>)}</section>
 
     {completedSprints.length > 0 && <section className="space-y-3"><h2 className="font-semibold text-ink">Completed sprints</h2>{completedSprints.map((sprint) => <article key={idOf(sprint)} className="flex items-center justify-between gap-3 rounded-panel border border-line bg-surface p-4"><div><h3 className="text-sm font-semibold text-ink">{sprint.name}</h3><p className="mt-1 text-xs text-ink-muted">Completed {dateLabel(sprint.completedAt)}</p></div><span className="rounded-full bg-status-done/10 px-2.5 py-1 text-xs font-semibold text-status-done">Completed</span></article>)}</section>}
 
