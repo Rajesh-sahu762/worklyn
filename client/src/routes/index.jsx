@@ -9,6 +9,7 @@ import ProjectsPage from "../pages/ProjectsPage";
 import AppShell from "../components/layout/AppShell";
 import ProjectOverviewPage from "../pages/ProjectOverviewPage";
 import ProjectIssuesPage from "../pages/ProjectIssuesPage";
+import ProjectBacklogPage from "../pages/ProjectBacklogPage";
 import IssueDetailPage from "../pages/IssueDetailPage";
 import OrganizationMembersPage from "../pages/OrganizationMembersPage";
 import OrganizationSettingsPage from "../pages/OrganizationSettingsPage";
@@ -36,6 +37,7 @@ export default function AppRoutes() {
             path="/projects/:projectId"
             element={<ProjectOverviewPage />}
           />
+          <Route path="/projects/:projectId/backlog" element={<ProjectBacklogPage />} />
           <Route
             path="/projects/:projectId/issues"
             element={<ProjectIssuesPage />}
