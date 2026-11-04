@@ -32,10 +32,12 @@ const createIssue = async ({
     if (!attached || !team) throw new Error("Team must be active and assigned to this project");
     const members = await TeamMember.find({ team: assigneeTeamId, status: "ACTIVE" }).select("user").lean();
     const ids = members.map(m => m.user);
-    const memberships = ids.length ? await ProjectMember.find({
-      project: projectId, user: { $in: ids }, status: "ACTIVE",
-    }).select("user").lean() : [];
-    teamRecipients = memberships.map(m => m.user);
+    const [memberships, activeOrgMembers] = ids.length ? await Promise.all([
+      ProjectMember.find({ project: projectId, user: { $in: ids }, status: "ACTIVE" }).select("user").lean(),
+      OrganizationMember.find({ organization: project.organization, user: { $in: ids }, status: "ACTIVE" }).select("user").lean(),
+    ]) : [[], []];
+    const activeOrgIds = new Set(activeOrgMembers.map(m => String(m.user)));
+    teamRecipients = memberships.map(m => m.user).filter(id => activeOrgIds.has(String(id)));
     if (!teamRecipients.length) throw new Error("Selected team has no active project members");
   }
   if (assigneeId && assigneeTeamId) throw new Error("Choose an individual or a team, not both");
@@ -453,8 +455,12 @@ const updateIssue = async ({
   if (changes.some((change) => change.field === "assigneeTeam") && issue.assigneeTeam) {
     const members = await TeamMember.find({ team: issue.assigneeTeam, status: "ACTIVE" }).select("user").lean();
     const ids = members.map(member => member.user);
-    const projectMembers = ids.length ? await ProjectMember.find({ project: projectId, user: { $in: ids }, status: "ACTIVE" }).select("user").lean() : [];
-    for (const member of projectMembers) notifications.push({ recipientId: member.user, actorId: userId, organizationId: issue.organization, projectId: issue.project, issueId: issue._id, type: "ISSUE_ASSIGNED", message: `Your team was assigned ${issue.issueKey}` });
+    const [projectMembers, activeOrgMembers] = ids.length ? await Promise.all([
+      ProjectMember.find({ project: projectId, user: { $in: ids }, status: "ACTIVE" }).select("user").lean(),
+      OrganizationMember.find({ organization: issue.organization, user: { $in: ids }, status: "ACTIVE" }).select("user").lean(),
+    ]) : [[], []];
+    const activeOrgIds = new Set(activeOrgMembers.map(member => String(member.user)));
+    for (const member of projectMembers.filter(member => activeOrgIds.has(String(member.user)))) notifications.push({ recipientId: member.user, actorId: userId, organizationId: issue.organization, projectId: issue.project, issueId: issue._id, type: "ISSUE_ASSIGNED", message: `Your team was assigned ${issue.issueKey}` });
   }
   if (changes.some((change) => change.field === "assignee") && issue.assignee) {
     notifications.push({
