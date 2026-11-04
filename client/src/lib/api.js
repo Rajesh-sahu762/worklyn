@@ -212,6 +212,10 @@ export const updateProjectMemberRole = (projectId, memberId, role) =>
 export const removeProjectMember = (projectId, memberId) =>
   request(`/projects/${projectId}/members/${memberId}`, { method: "DELETE" });
 
+// Project reporting
+export const getProjectReport = (projectId) =>
+  request(`/projects/${projectId}/reports/summary`).then((r) => r.data.summary);
+
 // Notifications
 export const getNotifications = (page = 1, limit = 20) =>
   request(`/notifications?page=${page}&limit=${limit}`).then((r) => ({
