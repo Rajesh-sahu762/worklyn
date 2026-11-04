@@ -212,6 +212,34 @@ export const updateProjectMemberRole = (projectId, memberId, role) =>
 export const removeProjectMember = (projectId, memberId) =>
   request(`/projects/${projectId}/members/${memberId}`, { method: "DELETE" });
 
+// Organization teams
+export const getTeams = (organizationId) =>
+  request(`/organizations/${organizationId}/teams`).then((r) => r.data.teams ?? []);
+
+export const createTeam = (organizationId, payload) =>
+  request(`/organizations/${organizationId}/teams`, { method: "POST", body: payload }).then((r) => r.data.team);
+
+export const getTeam = (organizationId, teamId) =>
+  request(`/organizations/${organizationId}/teams/${teamId}`).then((r) => r.data);
+
+export const updateTeam = (organizationId, teamId, payload) =>
+  request(`/organizations/${organizationId}/teams/${teamId}`, { method: "PATCH", body: payload }).then((r) => r.data.team);
+
+export const archiveTeam = (organizationId, teamId) =>
+  request(`/organizations/${organizationId}/teams/${teamId}`, { method: "DELETE" });
+
+export const getTeamMembers = (organizationId, teamId) =>
+  request(`/organizations/${organizationId}/teams/${teamId}/members`).then((r) => r.data.members ?? []);
+
+export const addTeamMember = (organizationId, teamId, userId, role = "MEMBER") =>
+  request(`/organizations/${organizationId}/teams/${teamId}/members`, { method: "POST", body: { userId, role } }).then((r) => r.data.member);
+
+export const updateTeamMemberRole = (organizationId, teamId, memberId, role) =>
+  request(`/organizations/${organizationId}/teams/${teamId}/members/${memberId}/role`, { method: "PATCH", body: { role } }).then((r) => r.data.member);
+
+export const removeTeamMember = (organizationId, teamId, memberId) =>
+  request(`/organizations/${organizationId}/teams/${teamId}/members/${memberId}`, { method: "DELETE" });
+
 // GET /api/projects/:projectId/issues?assignee=&limit=&status=...
 // Response key for the array isn't documented; accept the common shapes.
 export const getProjectIssues = (projectId, params = {}) => {
