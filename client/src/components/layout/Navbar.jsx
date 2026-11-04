@@ -46,6 +46,8 @@ export default function Navbar({ onOpenMenu, onOpenSearch }) {
       ? "Project board"
     : pathname.endsWith("/sprints")
       ? "Sprint planning"
+    : pathname.endsWith("/reports")
+      ? "Project reports"
       : pathname.endsWith("/members")
         ? "Project members"
         : pathname.endsWith("/settings")
