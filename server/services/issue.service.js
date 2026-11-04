@@ -473,6 +473,8 @@ const updateIssue = async ({
   return Issue.findById(issue._id)
     .populate("reporter", "firstName lastName email")
     .populate("assignee", "firstName lastName email profileImage")
+    .populate("assigneeTeam", "name")
+    .populate("sprint", "name status")
     .populate("parentIssue", "issueKey title type status")
     .lean();
 };
