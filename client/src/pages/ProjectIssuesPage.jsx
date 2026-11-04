@@ -467,7 +467,7 @@ export default function ProjectIssuesPage() {
                   { value: "BUG", label: "Bug" },
                   { value: "STORY", label: "Story" },
                   { value: "EPIC", label: "Epic" },
-                  { value: "SUBTASK", label: "Subtask" },
+                  { value: "SUB_TASK", label: "Sub-task" },
                 ]}
               />
 
