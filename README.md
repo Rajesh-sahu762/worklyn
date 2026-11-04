@@ -465,3 +465,13 @@ Source changes are committed. No local build, lint, automated tests or live API/
 - Scrum/Kanban board foundations: persisted board columns/order, board query APIs, issue movement and permission enforcement.
 - Sprint planning: sprint lifecycle, backlog-to-sprint assignment, start/complete flows and sprint issue views.
 - Notifications, global search, reports, profile/preferences, attachments and final QA remain after board and sprint foundations.
+
+## 24. Project workflow board implementation — 4 November 2026
+
+- Added `/projects/:projectId/board` with TODO, IN_PROGRESS, IN_REVIEW and DONE columns.
+- Board loads issues through the existing project issue API, displays counts, issue key/title/priority/type/assignee and links to issue detail.
+- Supports native drag-and-drop and an accessible status select fallback. Moves use the existing `updateIssue` API and optimistic UI rollback on failure.
+- Existing backend status transition rules remain authoritative; the UI only offers adjacent allowed transitions.
+- Project VIEWER users cannot move issues in the board UI; backend viewer restrictions remain authoritative.
+- Backlog remains a separate planning view and is linked from the board.
+- Current board fetches at most 100 issues per workflow column. Server-side pagination/virtualization is a future scalability improvement.
