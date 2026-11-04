@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { useOrganization } from "../../context/OrganizationContext";
 import { FEATURES } from "../../lib/features";
+import { getProjectIssues } from "../../lib/api";
 import { SearchIcon } from "./icons";
 
 // Searches things that exist today: pages, your projects, your organizations,
@@ -13,6 +14,8 @@ export default function CommandPalette({ open, onClose }) {
   const { projects, orgs, currentOrg, switchOrg } = useOrganization();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
+  const [issueResults, setIssueResults] = useState([]);
+  const [searchingIssues, setSearchingIssues] = useState(false);
   const inputRef = useRef(null);
   const returnFocus = useRef(null);
 
@@ -26,8 +29,47 @@ export default function CommandPalette({ open, onClose }) {
     );
     list.push({ id: "new-org", group: "Create", label: "Create organization", enabled: FEATURES.createOrganization, run: () => navigate("/organizations/new") });
     list.push({ id: "signout", group: "Account", label: "Sign out", enabled: true, run: logout });
+    list.push({ id: "notifications", group: "Go to", label: "Notifications", enabled: FEATURES.notifications, run: () => navigate("/notifications") });
+    list.push(...issueResults);
     return list;
-  }, [projects, orgs, currentOrg, navigate, switchOrg, logout]);
+  }, [projects, orgs, currentOrg, navigate, switchOrg, logout, issueResults]);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!open || q.length < 2 || !projects.length) {
+      setIssueResults([]);
+      setSearchingIssues(false);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setSearchingIssues(true);
+      const results = await Promise.allSettled(
+        projects.map(async (project) => {
+          const issues = await getProjectIssues(project.id, { search: q, limit: 5 });
+          return issues.map((issue) => ({
+            id: `i-${issue._id ?? issue.id}`,
+            group: "Issues",
+            label: issue.title,
+            hint: issue.issueKey,
+            subhint: project.name,
+            enabled: true,
+            run: () => navigate(`/projects/${project.id}/issues/${issue._id ?? issue.id}`),
+          }));
+        })
+      );
+      if (!cancelled) {
+        setIssueResults(results.flatMap((result) => result.status === "fulfilled" ? result.value : []));
+        setSearchingIssues(false);
+      }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [open, query, projects, navigate]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -67,7 +109,7 @@ export default function CommandPalette({ open, onClose }) {
             aria-expanded="true"
             aria-controls="palette-list"
             aria-activedescendant={results[active] ? `palette-${results[active].id}` : undefined}
-            placeholder="Search projects, switch organization…"
+            placeholder="Search projects, issues, switch organization…"
             className="h-14 w-full bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-faint"
           />
           <kbd className="rounded-control border border-line px-1.5 py-0.5 font-mono text-[11px] text-ink-muted">Esc</kbd>
@@ -90,14 +132,14 @@ export default function CommandPalette({ open, onClose }) {
                 className={`flex items-center gap-3 rounded-control px-3 py-2 text-sm ${i === active ? "bg-brand-lime/35" : ""} ${item.enabled ? "cursor-pointer text-ink" : "cursor-not-allowed text-ink-muted"}`}
               >
                 {item.hint && <span className="rounded-[5px] border border-line bg-surface px-1.5 font-mono text-[10px] font-semibold">{item.hint.toUpperCase()}</span>}
-                <span className="truncate">{item.label}</span>
+                <span className="min-w-0 flex-1 truncate">{item.label}{item.subhint && <span className="ml-2 text-xs text-ink-faint">· {item.subhint}</span>}</span>
                 {!item.enabled && <span className="ml-auto rounded-full bg-surface-subtle px-2 py-0.5 text-[11px]">Soon</span>}
               </div>
             </li>
           ))}
         </ul>
 
-        <p className="border-t border-line bg-canvas px-4 py-2 text-xs text-ink-muted">Issue search arrives with the project pages.</p>
+        <p className="border-t border-line bg-canvas px-4 py-2 text-xs text-ink-muted">{searchingIssues ? "Searching issues…" : "Search across your projects by issue title or key."}</p>
       </div>
     </div>
   );
