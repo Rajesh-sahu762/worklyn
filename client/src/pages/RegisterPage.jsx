@@ -6,7 +6,7 @@ import {
   inputClass,
   linkClass,
 } from "../components/AuthShell";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RESEND_SECONDS = 30; // UI throttle only; the server sets no documented limit
 
@@ -77,7 +77,9 @@ function SubmitButton({ pending, idle, busy }) {
  */
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const onGoToLogin = () => navigate("/login");
+  const location = useLocation();
+  const returnTo = location.state?.from;
+  const onGoToLogin = () => navigate("/login", { state: returnTo ? { from: returnTo } : undefined });
   const uid = useId();
   const id = (n) => `${uid}-${n}`;
 
