@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import {
-  Check, Copy, MailPlus, RefreshCw, Search, Shield, ShieldCheck,
+  Check, Copy, History, MailPlus, RefreshCw, Search, Shield, ShieldCheck,
   UserMinus, Users, X, XCircle,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useOrganization } from "../context/OrganizationContext";
 import {
-  cancelInvitation, createInvitation, getOrgMembers, removeOrgMember,
+  cancelInvitation, createInvitation, getOrgInvitations, getOrgMembers, removeOrgMember,
   resendInvitation, updateOrgMemberRole,
 } from "../lib/api";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -83,8 +83,14 @@ export default function OrganizationMembersPage() {
   const [invite, setInvite] = useState({ email: "", role: "MEMBER" });
   const [inviteBusy, setInviteBusy] = useState(false);
   const [inviteError, setInviteError] = useState({ field: "", form: "" });
-  const [sent, setSent] = useState([]);
-  const [sentBusy, setSentBusy] = useState(null);
+  const [activeTab, setActiveTab] = useState("members");
+  const [history, setHistory] = useState({ items: [], pagination: { page: 1, limit: 5, total: 0, totalPages: 1 } });
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyReload, setHistoryReload] = useState(0);
+  const [historyStatus, setHistoryStatus] = useState("loading");
+  const [historyError, setHistoryError] = useState("");
+  const [invitationBusy, setInvitationBusy] = useState(null);
+  const [freshLinks, setFreshLinks] = useState({});
   const [copied, setCopied] = useState(null);
 
   const key = `${orgId}#${reloadKey}`;
@@ -102,7 +108,24 @@ export default function OrganizationMembersPage() {
     return () => { cancelled = true; };
   }, [orgId, key]);
 
-  const orgSent = sent.filter((invitation) => invitation.orgId === orgId);
+  useEffect(() => {
+    if (!orgId || !canInvite) return;
+    let cancelled = false;
+    setHistoryStatus("loading");
+    setHistoryError("");
+    getOrgInvitations(orgId, historyPage, 5)
+      .then(({ invitations, pagination }) => {
+        if (!cancelled) {
+          setHistory((current) => ({ items: historyPage === 1 ? invitations : [...current.items, ...invitations], pagination }));
+          setHistoryStatus("ready");
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) { setHistoryError(error.message); setHistoryStatus("error"); }
+      });
+    return () => { cancelled = true; };
+  }, [orgId, canInvite, historyPage, historyReload]);
+
   const status = !orgId ? "idle" : data.key !== key ? "loading" : data.error ? "error" : "ready";
   const members = status === "ready" ? data.members : [];
   const setMembers = (update) => setData((current) => ({
@@ -139,14 +162,12 @@ export default function OrganizationMembersPage() {
     setInviteError({ field: "", form: "" });
     try {
       const { invitation, link } = await createInvitation(orgId, email, invite.role);
-      setSent((list) => [{
-        orgId,
-        id: invitation?._id ?? invitation?.id,
-        email,
-        role: invite.role,
-        link,
-        expiresAt: invitation?.expiresAt,
-      }, ...list]);
+      const invitationId = invitation?._id ?? invitation?.id;
+      if (invitationId && link) setFreshLinks((current) => ({ ...current, [invitationId]: link }));
+      setHistoryPage(1);
+      setHistory({ items: [], pagination: { page: 1, limit: 5, total: 0, totalPages: 1 } });
+      setHistoryReload((value) => value + 1);
+      setActiveTab("history");
       setInvite({ email: "", role: "MEMBER" });
       setInviteOpen(false);
       setNotice({ ok: true, text: `Invitation created for ${email}. Share the link below.` });
@@ -158,44 +179,42 @@ export default function OrganizationMembersPage() {
     }
   }
 
-  async function runInvitationAction(invitation, action, onSuccess) {
-    setSentBusy(invitation.id);
+  async function resend(invitation) {
+    setInvitationBusy(invitation._id);
     try {
-      await action();
-      onSuccess();
-    } catch (err) {
-      setNotice({ ok: false, text: err.message });
+      const { invitation: updated, link } = await resendInvitation(orgId, invitation._id);
+      if (link) setFreshLinks((current) => ({ ...current, [invitation._id]: link }));
+      setHistory((current) => ({ ...current, items: current.items.map((item) => item._id === invitation._id ? { ...item, ...updated } : item) }));
+      setNotice({ ok: true, text: `A fresh invitation link was generated for ${invitation.email}. Copy it from this history row.` });
+    } catch (error) {
+      setNotice({ ok: false, text: error.message });
     } finally {
-      setSentBusy(null);
+      setInvitationBusy(null);
     }
   }
 
-  function resend(invitation) {
-    return runInvitationAction(invitation, async () => {
-      const { invitation: updated, link } = await resendInvitation(orgId, invitation.id);
-      setSent((list) => list.map((item) => item.id === invitation.id ? {
-        ...item,
-        link: link || item.link,
-        expiresAt: updated?.expiresAt ?? item.expiresAt,
-      } : item));
-    }, () => setNotice({ ok: true, text: `A fresh invitation link was created for ${invitation.email}. The old link is no longer valid.` }));
-  }
-
-  function cancel(invitation) {
-    return runInvitationAction(invitation, () => cancelInvitation(orgId, invitation.id), () => {
-      setSent((list) => list.filter((item) => item.id !== invitation.id));
-      setNotice({ ok: true, text: `Invitation to ${invitation.email} was cancelled.` });
-    });
-  }
-
-  async function copy(invitation) {
-    if (!invitation.link) return;
+  async function cancel(invitation) {
+    setInvitationBusy(invitation._id);
     try {
-      await navigator.clipboard.writeText(invitation.link);
-      setCopied(invitation.id);
-      window.setTimeout(() => setCopied((value) => value === invitation.id ? null : value), 1800);
+      await cancelInvitation(orgId, invitation._id);
+      setHistory((current) => ({ ...current, items: current.items.map((item) => item._id === invitation._id ? { ...item, status: "CANCELLED", cancelledAt: new Date().toISOString() } : item) }));
+      setNotice({ ok: true, text: `Invitation to ${invitation.email} was cancelled.` });
+    } catch (error) {
+      setNotice({ ok: false, text: error.message });
+    } finally {
+      setInvitationBusy(null);
+    }
+  }
+
+  async function copyInvitationLink(invitation) {
+    const link = freshLinks[invitation._id];
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(invitation._id);
+      window.setTimeout(() => setCopied((value) => value === invitation._id ? null : value), 1800);
     } catch {
-      setNotice({ ok: false, text: "Couldn't copy automatically. Select the invitation link and copy it." });
+      setNotice({ ok: false, text: "Couldn't copy automatically. Try generating a fresh link again." });
     }
   }
 
@@ -305,58 +324,50 @@ export default function OrganizationMembersPage() {
         </div>
       )}
 
-      {orgSent.length > 0 && (
+      <div role="tablist" aria-label="Organization people sections" className="flex w-full gap-1 rounded-xl border border-line bg-surface-subtle p-1 sm:w-fit">
+        <button type="button" role="tab" aria-selected={activeTab === "members"} onClick={() => setActiveTab("members")} className={`inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition sm:flex-none ${activeTab === "members" ? "bg-surface text-ink shadow-sm" : "text-ink-muted hover:text-ink"}`}>
+          <Users size={16} /> Manage members <span className="text-xs opacity-70">{status === "ready" ? counts.total : ""}</span>
+        </button>
+        {canInvite && <button type="button" role="tab" aria-selected={activeTab === "history"} onClick={() => setActiveTab("history")} className={`inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition sm:flex-none ${activeTab === "history" ? "bg-surface text-ink shadow-sm" : "text-ink-muted hover:text-ink"}`}>
+          <History size={16} /> Invitation history <span className="text-xs opacity-70">{history.pagination.total || ""}</span>
+        </button>}
+      </div>
+
+      {activeTab === "history" && canInvite && (
         <section aria-labelledby="invitations-heading" className="overflow-hidden rounded-xl border border-line bg-surface">
-          <div className="flex flex-col gap-1 border-b border-line px-4 py-4 sm:px-5">
-            <div className="flex items-center gap-2">
-              <MailPlus size={17} className="text-ink-muted" />
-              <h2 id="invitations-heading" className="font-semibold text-ink">Recently invited</h2>
-              <span className="rounded-full bg-surface-subtle px-2 py-0.5 text-xs font-medium text-ink-muted">{orgSent.length}</span>
-            </div>
-            <p className="text-xs leading-5 text-ink-muted">Email delivery isn't configured yet. Copy and share these links directly. This temporary list clears when you leave this page.</p>
+          <div className="flex flex-col gap-2 border-b border-line p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <div><h2 id="invitations-heading" className="font-semibold text-ink">Invitation history</h2><p className="mt-1 text-xs text-ink-muted">Recent pending, accepted, expired and cancelled invitations.</p></div>
+            <button type="button" onClick={() => { setHistoryPage(1); setHistory({ items: [], pagination: { page: 1, limit: 5, total: 0, totalPages: 1 } }); setHistoryReload((value) => value + 1); }} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-control border border-line px-3 text-sm font-medium text-ink hover:bg-surface-subtle"><RefreshCw size={14} /> Refresh history</button>
           </div>
-          <ul className="divide-y divide-line">
-            {orgSent.map((invitation) => (
-              <li key={invitation.id} className="flex min-w-0 flex-col gap-3 p-4 sm:px-5">
-                <div className="flex min-w-0 items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="break-all text-sm font-semibold text-ink">{invitation.email}</p>
-                    <div className="mt-1 flex flex-wrap items-center gap-2">
-                      <RoleBadge role={invitation.role} />
-                      {invitation.expiresAt && <span className="text-xs text-ink-faint">Expires {fmt(invitation.expiresAt)}</span>}
-                    </div>
-                  </div>
-                  {sentBusy === invitation.id && <span className="text-xs text-ink-muted">Updating…</span>}
+          {historyStatus === "loading" && history.items.length === 0 && <p className="px-5 py-10 text-center text-sm text-ink-muted">Loading invitation history…</p>}
+          {historyStatus === "error" && <div role="alert" className="p-5 text-sm text-danger">{historyError} <button type="button" onClick={() => setHistoryReload((value) => value + 1)} className="ml-2 font-semibold underline">Try again</button></div>}
+          {historyStatus === "ready" && history.items.length === 0 && <div className="px-5 py-12 text-center"><MailPlus size={22} className="mx-auto text-ink-faint" /><p className="mt-3 text-sm font-semibold text-ink">No invitations yet</p><p className="mt-1 text-sm text-ink-muted">Invitations you create will remain visible here.</p><button type="button" onClick={() => setInviteOpen(true)} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-white hover:bg-accent-strong"><MailPlus size={15} /> Invite someone</button></div>}
+          {history.items.length > 0 && <ul className="divide-y divide-line">
+            {history.items.map((invitation) => {
+              const inviter = invitation.invitedBy;
+              const inviterName = inviter ? [inviter.firstName, inviter.lastName].filter(Boolean).join(" ") || inviter.email : "Workspace admin";
+              const expired = invitation.status === "PENDING" && new Date(invitation.expiresAt) <= new Date();
+              const displayStatus = expired ? "EXPIRED" : invitation.status;
+              const statusStyle = displayStatus === "ACCEPTED" ? "bg-emerald-50 text-emerald-700" : displayStatus === "PENDING" ? "bg-amber-50 text-amber-700" : "bg-surface-subtle text-ink-muted";
+              return <li key={invitation._id} className="flex min-w-0 flex-col gap-3 p-4 sm:px-5">
+                <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0"><p className="break-all text-sm font-semibold text-ink">{invitation.email}</p><div className="mt-1.5 flex flex-wrap items-center gap-2"><RoleBadge role={invitation.role} /><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyle}`}>{displayStatus.charAt(0) + displayStatus.slice(1).toLowerCase()}</span></div></div>
+                  <div className="text-left text-xs leading-5 text-ink-faint sm:text-right"><p>Invited {fmt(invitation.createdAt)}</p><p>By {inviterName}</p>{invitation.acceptedAt && <p>Accepted {fmt(invitation.acceptedAt)}</p>}{invitation.expiresAt && displayStatus === "PENDING" && <p>Expires {fmt(invitation.expiresAt)}</p>}</div>
                 </div>
-                {invitation.link ? (
-                  <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
-                    <input
-                      readOnly
-                      value={invitation.link}
-                      onFocus={(event) => event.target.select()}
-                      aria-label={`Invitation link for ${invitation.email}`}
-                      className="min-h-10 min-w-0 flex-1 rounded-control border border-line bg-canvas px-3 py-2 font-mono text-xs text-ink-muted"
-                    />
-                    <button type="button" onClick={() => copy(invitation)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-control border border-line px-3 text-sm font-medium text-ink hover:bg-surface-subtle">
-                      {copied === invitation.id ? <Check size={15} /> : <Copy size={15} />}
-                      {copied === invitation.id ? "Copied" : "Copy link"}
-                    </button>
-                  </div>
-                ) : <p className="text-xs text-ink-muted">The server didn't return an invitation link.</p>}
-                <div className="flex flex-wrap items-center gap-2">
-                  <button type="button" onClick={() => resend(invitation)} disabled={sentBusy === invitation.id} className="inline-flex min-h-9 items-center gap-1.5 rounded-control px-3 text-sm font-medium text-accent-support hover:bg-surface-subtle disabled:opacity-50">
-                    <RefreshCw size={14} /> Resend
-                  </button>
-                  <button type="button" onClick={() => cancel(invitation)} disabled={sentBusy === invitation.id} className="inline-flex min-h-9 items-center gap-1.5 rounded-control px-3 text-sm font-medium text-danger hover:bg-danger/5 disabled:opacity-50">
-                    <X size={14} /> Cancel
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+                {displayStatus === "PENDING" && <div className="flex flex-wrap items-center gap-2">
+                  {freshLinks[invitation._id] && <button type="button" onClick={() => copyInvitationLink(invitation)} className="inline-flex min-h-9 items-center gap-1.5 rounded-control border border-line px-3 text-sm font-medium text-ink hover:bg-surface-subtle">{copied === invitation._id ? <Check size={14} /> : <Copy size={14} />}{copied === invitation._id ? "Copied" : "Copy fresh link"}</button>}
+                  <button type="button" onClick={() => resend(invitation)} disabled={invitationBusy === invitation._id} className="inline-flex min-h-9 items-center gap-1.5 rounded-control px-3 text-sm font-medium text-accent-support hover:bg-surface-subtle disabled:opacity-50"><RefreshCw size={14} /> Resend</button>
+                  <button type="button" onClick={() => cancel(invitation)} disabled={invitationBusy === invitation._id} className="inline-flex min-h-9 items-center gap-1.5 rounded-control px-3 text-sm font-medium text-danger hover:bg-danger/5 disabled:opacity-50"><X size={14} /> Cancel</button>
+                  {invitationBusy === invitation._id && <span className="text-xs text-ink-muted">Updating…</span>}
+                </div>}
+              </li>;
+            })}
+          </ul>}
+          {history.pagination.page < history.pagination.totalPages && <div className="border-t border-line p-4 text-center"><button type="button" disabled={historyStatus === "loading"} onClick={() => { setHistoryStatus("loading"); setHistoryPage((page) => page + 1); }} className="inline-flex min-h-10 items-center justify-center rounded-control border border-line px-4 text-sm font-semibold text-ink hover:bg-surface-subtle disabled:opacity-50">{historyStatus === "loading" ? "Loading…" : "Load 5 more invitations"}</button><p className="mt-2 text-xs text-ink-faint">Showing {history.items.length} of {history.pagination.total}</p></div>}
         </section>
       )}
 
+      {activeTab === "members" && (
       <section aria-labelledby="members-heading" className="overflow-hidden rounded-xl border border-line bg-surface">
         <div className="border-b border-line p-4 sm:p-5">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -477,6 +488,8 @@ export default function OrganizationMembersPage() {
         )}
       </section>
 
+      )}
+
       <ConfirmDialog
         open={!!toRemove}
         title={`Remove ${toRemove?.name}?`}
@@ -527,6 +540,7 @@ export default function OrganizationMembersPage() {
           </Field>
         </div>
       </ConfirmDialog>
+      )}
     </div>
   );
 }
