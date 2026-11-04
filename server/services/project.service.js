@@ -130,6 +130,19 @@ const getProjectById = async (projectId) => {
   return project;
 };
 
+const getProjectMembers = async (projectId) => {
+  return ProjectMember.find({
+    project: projectId,
+    status: "ACTIVE",
+  })
+    .populate({
+      path: "user",
+      select: "firstName lastName email profileImage",
+    })
+    .sort({ createdAt: 1 })
+    .lean();
+};
+
 const addProjectMember = async ({ projectId, userId, role }) => {
   const project = await Project.findOne({
     _id: projectId,
@@ -251,6 +264,7 @@ module.exports = {
   createProject,
   getUserProjects,
   getProjectById,
+  getProjectMembers,
   addProjectMember,
   updateProjectMemberRole,
   removeProjectMember
