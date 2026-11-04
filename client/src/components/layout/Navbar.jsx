@@ -24,6 +24,7 @@ const TITLES = {
   "/projects/:projectId/backlog": "Project backlog",
   "/projects/:projectId/board": "Project board",
   "/settings/organization": "Organization settings",
+  "/settings/profile": "Profile & preferences",
   "/invitations/accept": "Accept invitation"
 };
 
