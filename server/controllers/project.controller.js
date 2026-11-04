@@ -2,6 +2,7 @@ const {
   createProject,
   getProjectById,
   getUserProjects,
+  getProjectMembers,
   addProjectMember,
   updateProjectMemberRole,
   removeProjectMember
@@ -96,6 +97,21 @@ const getProjectDetailsController = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch project details",
+    });
+  }
+};
+
+const getProjectMembersController = async (req, res) => {
+  try {
+    const members = await getProjectMembers(req.project._id);
+    return res.status(200).json({
+      success: true,
+      data: { members },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch project members",
     });
   }
 };
@@ -242,6 +258,7 @@ module.exports = {
   createProjectController,
   getProjectDetailsController,
   getMyProjectsController,
+  getProjectMembersController,
   addProjectMemberController,
   updateProjectMemberRoleController,
   removeProjectMemberController
