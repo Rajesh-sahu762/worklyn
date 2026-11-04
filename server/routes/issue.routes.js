@@ -4,6 +4,7 @@ const router = express.Router();
 const authenticate = require("../middlewares/authenticate");
 const projectAccess = require("../middlewares/projectAccess");
 const issueAccess = require("../middlewares/issueAccess");
+const authorizeProject = require("../middlewares/authorizeProject");
 const {
   getIssueActivitiesController,
 } = require("../controllers/issueActivity.controller");
@@ -19,6 +20,7 @@ router.post(
   "/projects/:projectId/issues",
   authenticate,
   projectAccess,
+  authorizeProject("PROJECT_ADMIN", "MEMBER"),
   createIssueController,
 );
 
