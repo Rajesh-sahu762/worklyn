@@ -28,7 +28,7 @@ const label = (value = "") => String(value).toLowerCase().replaceAll("_", " ").r
 function IssueCard({ issue, projectId, onMove, moving, onDragStart, canMove }) {
   const assignee = issue.assignee && typeof issue.assignee === "object"
     ? [issue.assignee.firstName, issue.assignee.lastName].filter(Boolean).join(" ") || issue.assignee.email
-    : "Unassigned";
+    : issue.assigneeTeam?.name || "Unassigned";
   const available = TRANSITIONS[issue.status] ?? [];
   return <article draggable={canMove} onDragStart={(event) => onDragStart(event, issue)} className="group rounded-xl border border-line bg-surface p-3.5 shadow-sm transition hover:border-ink-faint/60 hover:shadow-md active:cursor-grabbing">
     <div className="flex items-start justify-between gap-2"><span className="font-mono text-[10px] font-semibold tracking-wide text-ink-faint">{issue.issueKey ?? "ISSUE"}</span><span className={`text-[10px] font-semibold ${PRIORITY[issue.priority] ?? "text-ink-muted"}`}>{label(issue.priority ?? "MEDIUM")}</span></div>

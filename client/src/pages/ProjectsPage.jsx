@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate,Link } from "react-router";
 import { FolderKanban, Plus, Search, SlidersHorizontal, X, RefreshCw } from "lucide-react";
 import { useOrganization } from "../context/OrganizationContext";
-import { createProject } from "../lib/api";
+import { createProject, getTeams, getOrgMembers } from "../lib/api";
 
 
 const FILTERS = [
@@ -86,6 +86,22 @@ function CreateProjectDialog({ organizationId, onClose, onCreated }) {
   const [slugEdited, setSlugEdited] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [teams, setTeams] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [lead, setLead] = useState("");
+  const [teamIds, setTeamIds] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([getTeams(organizationId), getOrgMembers(organizationId)])
+      .then(([teamRows, memberRows]) => {
+        if (cancelled) return;
+        setTeams((teamRows || []).filter(team => team.isActive));
+        setMembers((memberRows || []).filter(item => item.status === "ACTIVE" && item.user).map(item => item.user));
+      })
+      .catch(() => { if (!cancelled) { setTeams([]); setMembers([]); } });
+    return () => { cancelled = true; };
+  }, [organizationId]);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -98,6 +114,8 @@ function CreateProjectDialog({ organizationId, onClose, onCreated }) {
         slug: slug.trim().toLowerCase(),
         description: description.trim(),
         projectType,
+        ...(lead ? { lead } : {}),
+        teamIds,
       });
       onCreated();
     } catch (err) {
@@ -180,6 +198,22 @@ function CreateProjectDialog({ organizationId, onClose, onCreated }) {
             </select>
             <span className="mt-1 block text-[11px] text-ink-muted">This sets the project type. Board and sprint workflows are not enabled yet.</span>
           </label>
+
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium">Project lead</span>
+            <select value={lead} onChange={event => setLead(event.target.value)} className="h-10 w-full rounded-control border border-line bg-surface px-3 text-sm outline-none focus:border-accent-support">
+              <option value="">You (project creator)</option>
+              {members.map(user => <option key={user._id} value={user._id}>{[user.firstName, user.lastName].filter(Boolean).join(" ") || user.email}</option>)}
+            </select>
+          </label>
+
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium">Project teams <span className="font-normal text-ink-faint">(optional)</span></legend>
+            <p className="text-[11px] text-ink-muted">Selected teams become project participants. Their active members receive project membership.</p>
+            {teams.length ? <div className="max-h-36 space-y-2 overflow-y-auto rounded-control border border-line p-3">
+              {teams.map(team => <label key={team._id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={teamIds.includes(team._id)} onChange={event => setTeamIds(current => event.target.checked ? [...current, team._id] : current.filter(id => id !== team._id))} className="rounded border-line text-accent focus:ring-accent-support" /><span>{team.name}</span></label>)}
+            </div> : <p className="rounded-control border border-dashed border-line px-3 py-2 text-xs text-ink-muted">No active teams in this organization yet.</p>}
+          </fieldset>
 
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium">Description <span className="font-normal text-ink-faint">(optional)</span></span>

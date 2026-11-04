@@ -13,7 +13,9 @@ const { validateCreateProject } = require("../validators/project.validator");
 
 const createProjectController = async (req, res) => {
   try {
-    const errors = validateCreateProject(req.body);
+    const allowedFields = ["name", "key", "slug", "description", "projectType", "lead", "teamIds"];
+    if (Object.keys(req.body || {}).some(field => !allowedFields.includes(field))) return res.status(400).json({ success: false, message: "Unknown project field supplied" });
+    const errors = validateCreateProject(req.body || {});
 
     if (Object.keys(errors).length > 0) {
       return res.status(400).json({
@@ -23,7 +25,7 @@ const createProjectController = async (req, res) => {
       });
     }
 
-    const { name, key, slug, description, projectType, lead } = req.body;
+    const { name, key, slug, description, projectType, lead, teamIds = [] } = req.body;
 
     const project = await createProject({
       organizationId: req.params.organizationId,
@@ -36,6 +38,7 @@ const createProjectController = async (req, res) => {
       projectType: projectType || "SCRUM",
 
       lead: lead || req.user._id,
+      teamIds,
 
       createdBy: req.user._id,
     });
@@ -51,17 +54,19 @@ const createProjectController = async (req, res) => {
   } catch (error) {
     if (
       error.message === "Project key already exists in this organization" ||
-      error.message === "Project slug already exists in this organization"
+      error.message === "Project slug already exists in this organization" ||
+      error.message === "Project lead must be an active organization member" ||
+      error.message === "One or more selected teams are not active in this organization" ||
+      error.message === "Project creator must be an active organization member"
     ) {
-      return res.status(409).json({
-        success: false,
-        message: error.message,
-      });
+      const conflict = error.message.includes("already exists");
+      return res.status(conflict ? 409 : 400).json({ success: false, message: error.message });
     }
 
+    console.error("Create project error:", error);
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Failed to create project",
     });
   }
 };

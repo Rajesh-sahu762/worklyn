@@ -130,7 +130,7 @@ export default function ProjectBacklogPage() {
         {status === "ready" && filtered.length > 0 && <ul className="divide-y divide-line">
           {filtered.slice(0, visible).map((issue) => {
             const id = issueId(issue);
-            const assignee = issue.assignee && typeof issue.assignee === "object" ? [issue.assignee.firstName, issue.assignee.lastName].filter(Boolean).join(" ") || issue.assignee.email : "Unassigned";
+            const assignee = issue.assignee && typeof issue.assignee === "object" ? [issue.assignee.firstName, issue.assignee.lastName].filter(Boolean).join(" ") || issue.assignee.email : issue.assigneeTeam?.name || "Unassigned";
             return <li key={id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <div className="flex min-w-0 items-start gap-3">
                 <CircleDot size={17} className="mt-0.5 shrink-0 text-ink-faint" />

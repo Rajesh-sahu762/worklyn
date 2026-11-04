@@ -53,6 +53,8 @@ const projectSchema = new mongoose.Schema(
       required: true,
     },
 
+    teams: [{ type: mongoose.Schema.Types.ObjectId, ref: "Team" }],
+
     lead: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

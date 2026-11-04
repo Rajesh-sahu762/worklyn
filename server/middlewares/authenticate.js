@@ -1,18 +1,24 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const User = require("../models/user");
 
 const authenticate = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
+    const authHeader = req.headers.authorization || "";
+    const tokenMatch = /^Bearer +([^ ]+)$/i.exec(authHeader);
 
-    if (!authHeader || !authHeader.startsWith("Bearer")) {
+    if (!tokenMatch) {
       return res.status(401).json({
         success: false,
         message: "Authentication required",
       });
     }
 
-    const accessToken = authHeader.split(" ")[1];
+    const accessToken = tokenMatch[1];
+    const accessSecret = process.env.JWT_ACCESS_SECRET;
+    if (!accessSecret) {
+      console.error("JWT_ACCESS_SECRET is not configured");
+      return res.status(500).json({ success: false, message: "Authentication is temporarily unavailable" });
+    }
 
     if (!accessToken) {
       return res.status(401).json({
@@ -24,7 +30,8 @@ const authenticate = async (req, res, next) => {
     // Verify JWT
     const decoded = jwt.verify(
       accessToken,
-      process.env.JWT_ACCESS_SECRET
+      accessSecret,
+      { algorithms: ["HS256"] }
     );
 
     // Find user
