@@ -77,6 +77,7 @@ const validateGetIssues = (query) => {
       type: query.type,
       priority: query.priority,
       assignee: query.assignee,
+      sprint: query.sprint,
       search: query.search?.trim(),
     },
   };
