@@ -21,6 +21,7 @@ import OrganizationSettingsPage from "../pages/OrganizationSettingsPage";
 import AcceptInvitationPage from "../pages/AcceptInvitationPage";
 import TeamsPage from "../pages/TeamsPage";
 import NotificationsPage from "../pages/NotificationsPage";
+import ProfileSettingsPage from "../pages/ProfileSettingsPage";
 
 // Single place for the route table. As the app grows, split into
 // organizationRoutes.jsx, teamRoutes.jsx, ... and mount them here.
@@ -62,6 +63,7 @@ export default function AppRoutes() {
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/teams" element={<TeamsPage />} />
           <Route path="/teams/:teamId" element={<TeamsPage />} />
+          <Route path="/settings/profile" element={<ProfileSettingsPage />} />
           <Route path="/settings/organization" element={<OrganizationSettingsPage />} />
           <Route
             path="/invitations/accept"
