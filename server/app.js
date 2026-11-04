@@ -11,6 +11,7 @@ const teamRoutes = require("./routes/team.routes");
 const sprintRoutes = require("./routes/sprint.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const reportRoutes = require("./routes/report.routes");
+const profileRoutes = require("./routes/profile.routes");
 const app = express();
 
 var corsOptions = {
@@ -33,4 +34,5 @@ app.use("/api", teamRoutes);
 app.use("/api", sprintRoutes);
 app.use("/api", notificationRoutes);
 app.use("/api", reportRoutes);
+app.use("/api", profileRoutes);
 module.exports = app;
