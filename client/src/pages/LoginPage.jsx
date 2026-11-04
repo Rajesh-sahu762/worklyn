@@ -1,6 +1,6 @@
 import { useId, useRef, useState } from "react";
 import { login, resendVerification } from "../lib/api";
-import { Link } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
 // Real status enum + the forward path allowed by the backend transitions.
 const FLOW = [
@@ -42,6 +42,12 @@ const inputClass = (hasError) =>
  */
 export default function LoginPage() {
   const { login: setSession } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const returnTo = location.state?.from;
+  const returnPath = returnTo
+    ? `${returnTo.pathname ?? "/"}${returnTo.search ?? ""}${returnTo.hash ?? ""}`
+    : "/";
   const uid = useId();
   const emailId = `${uid}-email`;
   const passwordId = `${uid}-password`;
@@ -82,7 +88,9 @@ export default function LoginPage() {
     setPending(true);
     try {
       const { user, accessToken } = await login(email.trim().toLowerCase(), password);
-      setSession(user, accessToken); // PublicOnlyRoute redirects once the status flips
+      setSession(user, accessToken);
+      // Keep invitation/deep-link destinations after a successful sign-in.
+      navigate(returnPath, { replace: true });
     } catch (err) {
       // Keep what the user typed; only surface the problem.
       setFieldErrors(err.fieldErrors || {});
@@ -258,6 +266,7 @@ export default function LoginPage() {
             New to Worklyn?{" "}
           <Link
   to="/register"
+  state={returnTo ? { from: returnTo } : undefined}
   className="font-medium text-accent-support underline underline-offset-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-support"
 >
   Create an account
