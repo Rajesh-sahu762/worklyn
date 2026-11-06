@@ -4,18 +4,10 @@ import { ArrowLeft, Archive, Check, ChevronRight, CircleUserRound, LoaderCircle,
 import { useAuth } from "../context/AuthContext";
 import { useOrganization } from "../context/OrganizationContext";
 import {
-  addTeamMember,
-  archiveTeam,
-  createTeam,
-  getOrgMembers,
-  getTeam,
-  getTeams,
-  removeTeamMember,
-  updateTeam,
-  updateTeamMemberRole,
-} from "../lib/api";
+  addTeamMember, archiveTeam, createTeam, getOrgMembers, getTeam, getTeams, removeTeamMember, updateTeam, updateTeamMemberRole, } from "../lib/api";
 import ConfirmDialog from "../components/ConfirmDialog";
-import { Field, inputClass } from "../components/AuthShell";
+import { Field } from "../components/AuthShell";
+import { inputClass } from "../components/authStyles";
 
 const idOf = (item) => item?._id ?? item?.id;
 const userOf = (member) => member?.user && typeof member.user === "object" ? member.user : {};
