@@ -3,14 +3,10 @@ import { useNavigate } from "react-router";
 import { AlertTriangle, Building2, Check, Crown, LoaderCircle, Save, UserRoundCog } from "lucide-react";
 import { useOrganization } from "../context/OrganizationContext";
 import {
-  getOrgMembers,
-  getOrganization,
-  leaveOrganization,
-  transferOrganizationOwnership,
-  updateOrganization,
-} from "../lib/api";
+  getOrgMembers, getOrganization, leaveOrganization, transferOrganizationOwnership, updateOrganization, } from "../lib/api";
 import ConfirmDialog from "../components/ConfirmDialog";
-import { Field, inputClass } from "../components/AuthShell";
+import { Field } from "../components/AuthShell";
+import { inputClass } from "../components/authStyles";
 
 const MAX_NAME = 100;
 const MAX_DESCRIPTION = 500;
