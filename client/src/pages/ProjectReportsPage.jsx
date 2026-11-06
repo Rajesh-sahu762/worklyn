@@ -45,10 +45,13 @@ export default function ProjectReportsPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setStatus("loading");
-    Promise.all([getProject(projectId), getProjectReport(projectId)])
-      .then(([projectResult, report]) => {
-        if (cancelled) return;
+    Promise.resolve().then(() => {
+      if (cancelled) return null;
+      setStatus("loading");
+      return Promise.all([getProject(projectId), getProjectReport(projectId)]);
+    }).then((result) => {
+      if (cancelled || !result) return;
+      const [projectResult, report] = result;
         setProject(projectResult?.project ?? projectResult);
         setSummary(report);
         setStatus("ready");
