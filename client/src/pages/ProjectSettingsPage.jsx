@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { ArrowLeft, Check, FolderKanban, LoaderCircle, Save, Users } from "lucide-react";
 import { getProject, updateProject } from "../lib/api";
-import { Field, inputClass } from "../components/AuthShell";
+import { Field } from "../components/AuthShell";
+import { inputClass } from "../components/authStyles";
 
 export default function ProjectSettingsPage() {
   const { projectId } = useParams();
