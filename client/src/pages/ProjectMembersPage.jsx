@@ -4,15 +4,10 @@ import { ArrowLeft, Check, LoaderCircle, Plus, RefreshCw, Shield, Users, UserMin
 import { useOrganization } from "../context/OrganizationContext";
 import { useAuth } from "../context/AuthContext";
 import {
-  addProjectMember,
-  getOrgMembers,
-  getProject,
-  getProjectMembers,
-  removeProjectMember,
-  updateProjectMemberRole,
-} from "../lib/api";
+  addProjectMember, getOrgMembers, getProject, getProjectMembers, removeProjectMember, updateProjectMemberRole, } from "../lib/api";
 import ConfirmDialog from "../components/ConfirmDialog";
-import { Field, inputClass } from "../components/AuthShell";
+import { Field } from "../components/AuthShell";
+import { inputClass } from "../components/authStyles";
 
 const memberId = (member) => member._id ?? member.id;
 const userOf = (member) => member.user && typeof member.user === "object" ? member.user : {};
