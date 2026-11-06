@@ -92,36 +92,34 @@ export default function TeamsPage() {
   }, [members, orgMembers]);
 
   useEffect(() => {
-    if (!organizationId) {
-      setTeams([]);
-      setTeam(null);
-      setStatus("ready");
-      return;
-    }
     let cancelled = false;
-    setStatus("loading");
-    setError("");
-    if (teamId) {
-      Promise.all([getTeam(organizationId, teamId), getOrgMembers(organizationId)])
-        .then(([result, organizationMembers]) => {
+    Promise.resolve().then(async () => {
+      if (cancelled || !organizationId) return;
+      setStatus("loading");
+      setError("");
+      try {
+        if (teamId) {
+          const [result, organizationMembers] = await Promise.all([
+            getTeam(organizationId, teamId),
+            getOrgMembers(organizationId),
+          ]);
           if (cancelled) return;
           setTeam(result.team);
           setMembers(result.members ?? []);
           setOrgMembers(organizationMembers);
-          setStatus("ready");
-        })
-        .catch((err) => {
-          if (!cancelled) { setError(err.message || "Couldn't load this team."); setStatus("error"); }
-        });
-    } else {
-      getTeams(organizationId)
-        .then((items) => {
-          if (!cancelled) { setTeams(items); setStatus("ready"); }
-        })
-        .catch((err) => {
-          if (!cancelled) { setError(err.message || "Couldn't load teams."); setStatus("error"); }
-        });
-    }
+        } else {
+          const items = await getTeams(organizationId);
+          if (cancelled) return;
+          setTeams(items);
+        }
+        setStatus("ready");
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || (teamId ? "Couldn't load this team." : "Couldn't load teams."));
+          setStatus("error");
+        }
+      }
+    });
     return () => { cancelled = true; };
   }, [organizationId, teamId]);
 
