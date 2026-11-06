@@ -45,14 +45,17 @@ export default function ProjectBacklogPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setStatus("loading");
-    setError("");
-    Promise.all([
+    Promise.resolve().then(() => {
+      if (cancelled) return null;
+      setStatus("loading");
+      setError("");
+      return Promise.all([
       getProject(projectId),
       getProjectIssues(projectId, { status: "BACKLOG", limit: 100 }),
-    ])
-      .then(([projectResult, issueResult]) => {
-        if (cancelled) return;
+      ]);
+    }).then((result) => {
+      if (cancelled || !result) return;
+      const [projectResult, issueResult] = result;
         setProject(projectResult?.project ?? projectResult);
         setIssues(Array.isArray(issueResult) ? issueResult : []);
         setVisible(20);
