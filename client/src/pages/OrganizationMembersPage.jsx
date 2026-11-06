@@ -1,17 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import {
-  Check, Copy, History, MailPlus, RefreshCw, Search, Shield, ShieldCheck,
-  UserMinus, Users, X, XCircle,
-} from "lucide-react";
+  Check, Copy, History, MailPlus, RefreshCw, Search, Shield, ShieldCheck, UserMinus, Users, X, XCircle, } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useOrganization } from "../context/OrganizationContext";
 import {
-  cancelInvitation, createInvitation, getOrgInvitations, getOrgMembers, removeOrgMember,
-  resendInvitation, updateOrgMemberRole,
-} from "../lib/api";
+  cancelInvitation, createInvitation, getOrgInvitations, getOrgMembers, removeOrgMember, resendInvitation, updateOrgMemberRole, } from "../lib/api";
 import ConfirmDialog from "../components/ConfirmDialog";
-import { Field, inputClass } from "../components/AuthShell";
+import { Field } from "../components/AuthShell";
+import { inputClass } from "../components/authStyles";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ROLE_LABEL = { OWNER: "Owner", ADMIN: "Admin", MEMBER: "Member" };
