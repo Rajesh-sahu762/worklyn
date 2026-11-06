@@ -81,7 +81,8 @@ export default function OrganizationMembersPage() {
   const [inviteBusy, setInviteBusy] = useState(false);
   const [inviteError, setInviteError] = useState({ field: "", form: "" });
   const [activeTab, setActiveTab] = useState("members");
-  const [history, setHistory] = useState({ items: [], pagination: { page: 1, limit: 5, total: 0, totalPages: 1 } });
+  const emptyHistory = { items: [], pagination: { page: 1, limit: 5, total: 0, totalPages: 1 } };
+  const [history, setHistory] = useState({ key: "", ...emptyHistory });
   const [historyPage, setHistoryPage] = useState(1);
   const [historyReload, setHistoryReload] = useState(0);
   const [historyStatus, setHistoryStatus] = useState("loading");
@@ -106,21 +107,19 @@ export default function OrganizationMembersPage() {
   }, [orgId, key]);
 
   useEffect(() => {
-    setHistoryPage(1);
-    setHistory({ items: [], pagination: { page: 1, limit: 5, total: 0, totalPages: 1 } });
-    setFreshLinks({});
-    setActiveTab("members");
-  }, [orgId]);
-
-  useEffect(() => {
     if (!orgId || !canInvite) return;
     let cancelled = false;
-    setHistoryStatus("loading");
-    setHistoryError("");
-    getOrgInvitations(orgId, historyPage, 5)
+    Promise.resolve().then(() => {
+      if (cancelled) return null;
+      setHistoryStatus("loading");
+      setHistoryError("");
+      return getOrgInvitations(orgId, historyPage, 5);
+    }).then((result) => {
+      if (cancelled || !result) return;
+      const { invitations, pagination } = result;
       .then(({ invitations, pagination }) => {
         if (!cancelled) {
-          setHistory((current) => ({ items: historyPage === 1 ? invitations : [...current.items, ...invitations], pagination }));
+          setHistory((current) => ({ key: historyKey, items: historyPage === 1 ? invitations : [...(current.key === historyKey ? current.items : []), ...invitations], pagination }));
           setHistoryStatus("ready");
         }
       })
@@ -132,6 +131,8 @@ export default function OrganizationMembersPage() {
 
   const status = !orgId ? "idle" : data.key !== key ? "loading" : data.error ? "error" : "ready";
   const members = status === "ready" ? data.members : [];
+  const historyKey = `${orgId ?? ""}#${historyPage}#${historyReload}`;
+  const visibleHistory = history.key === historyKey ? history : emptyHistory;
   const setMembers = (update) => setData((current) => ({
     ...current,
     members: typeof update === "function" ? update(current.members) : update,
@@ -169,7 +170,7 @@ export default function OrganizationMembersPage() {
       const invitationId = invitation?._id ?? invitation?.id;
       if (invitationId && link) setFreshLinks((current) => ({ ...current, [invitationId]: link }));
       setHistoryPage(1);
-      setHistory({ items: [], pagination: { page: 1, limit: 5, total: 0, totalPages: 1 } });
+      setHistory({ key: `${orgId ?? ""}#1#${historyReload + 1}`, ...emptyHistory });
       setHistoryReload((value) => value + 1);
       setActiveTab("history");
       setInvite({ email: "", role: "MEMBER" });
@@ -333,7 +334,7 @@ export default function OrganizationMembersPage() {
           <Users size={16} /> Manage members <span className="text-xs opacity-70">{status === "ready" ? counts.total : ""}</span>
         </button>
         {canInvite && <button type="button" role="tab" aria-selected={activeTab === "history"} onClick={() => setActiveTab("history")} className={`inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition sm:flex-none ${activeTab === "history" ? "bg-surface text-ink shadow-sm" : "text-ink-muted hover:text-ink"}`}>
-          <History size={16} /> Invitation history <span className="text-xs opacity-70">{history.pagination.total || ""}</span>
+          <History size={16} /> Invitation history <span className="text-xs opacity-70">{visibleHistory.pagination.total || ""}</span>
         </button>}
       </div>
 
@@ -343,9 +344,9 @@ export default function OrganizationMembersPage() {
             <div><h2 id="invitations-heading" className="font-semibold text-ink">Invitation history</h2><p className="mt-1 text-xs text-ink-muted">Recent pending, accepted, expired and cancelled invitations.</p></div>
             <button type="button" onClick={() => { setHistoryPage(1); setHistory({ items: [], pagination: { page: 1, limit: 5, total: 0, totalPages: 1 } }); setHistoryReload((value) => value + 1); }} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-control border border-line px-3 text-sm font-medium text-ink hover:bg-surface-subtle"><RefreshCw size={14} /> Refresh history</button>
           </div>
-          {historyStatus === "loading" && history.items.length === 0 && <p className="px-5 py-10 text-center text-sm text-ink-muted">Loading invitation history…</p>}
+          {historyStatus === "loading" && visibleHistory.items.length === 0 && <p className="px-5 py-10 text-center text-sm text-ink-muted">Loading invitation history…</p>}
           {historyStatus === "error" && <div role="alert" className="p-5 text-sm text-danger">{historyError} <button type="button" onClick={() => setHistoryReload((value) => value + 1)} className="ml-2 font-semibold underline">Try again</button></div>}
-          {historyStatus === "ready" && history.items.length === 0 && <div className="px-5 py-12 text-center"><MailPlus size={22} className="mx-auto text-ink-faint" /><p className="mt-3 text-sm font-semibold text-ink">No invitations yet</p><p className="mt-1 text-sm text-ink-muted">Invitations you create will remain visible here.</p><button type="button" onClick={() => setInviteOpen(true)} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-white hover:bg-accent-strong"><MailPlus size={15} /> Invite someone</button></div>}
+          {historyStatus === "ready" && visibleHistory.items.length === 0 && <div className="px-5 py-12 text-center"><MailPlus size={22} className="mx-auto text-ink-faint" /><p className="mt-3 text-sm font-semibold text-ink">No invitations yet</p><p className="mt-1 text-sm text-ink-muted">Invitations you create will remain visible here.</p><button type="button" onClick={() => setInviteOpen(true)} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-white hover:bg-accent-strong"><MailPlus size={15} /> Invite someone</button></div>}
           {history.items.length > 0 && <ul className="divide-y divide-line">
             {history.items.map((invitation) => {
               const inviter = invitation.invitedBy;
