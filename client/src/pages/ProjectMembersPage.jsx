@@ -4,15 +4,10 @@ import { ArrowLeft, Check, LoaderCircle, Plus, RefreshCw, Shield, Users, UserMin
 import { useOrganization } from "../context/OrganizationContext";
 import { useAuth } from "../context/AuthContext";
 import {
-  addProjectMember,
-  getOrgMembers,
-  getProject,
-  getProjectMembers,
-  removeProjectMember,
-  updateProjectMemberRole,
-} from "../lib/api";
+  addProjectMember, getOrgMembers, getProject, getProjectMembers, removeProjectMember, updateProjectMemberRole, } from "../lib/api";
 import ConfirmDialog from "../components/ConfirmDialog";
-import { Field, inputClass } from "../components/AuthShell";
+import { Field } from "../components/AuthShell";
+import { inputClass } from "../components/authStyles";
 
 const memberId = (member) => member._id ?? member.id;
 const userOf = (member) => member.user && typeof member.user === "object" ? member.user : {};
@@ -69,15 +64,18 @@ export default function ProjectMembersPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setStatus("loading");
-    setError("");
-    Promise.all([
+    Promise.resolve().then(() => {
+      if (cancelled) return null;
+      setStatus("loading");
+      setError("");
+      return Promise.all([
       getProject(projectId),
       getProjectMembers(projectId),
       currentOrg?.id ? getOrgMembers(currentOrg.id) : Promise.resolve([]),
-    ])
-      .then(([projectResult, projectMembers, organizationMembers]) => {
-        if (cancelled) return;
+      ]);
+    }).then((result) => {
+      if (cancelled || !result) return;
+      const [projectResult, projectMembers, organizationMembers] = result;
         setProject(projectResult?.project ?? projectResult);
         setRole(projectResult?.role ?? null);
         setMembers(projectMembers);

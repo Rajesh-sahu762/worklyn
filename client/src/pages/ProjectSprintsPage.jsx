@@ -1,18 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import { ArrowLeft, CalendarDays, Check, CircleDot, Flag, LoaderCircle, Plus, Rocket } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, Flag, LoaderCircle, Plus, Rocket } from "lucide-react";
 import {
-  assignIssueToSprint,
-  completeSprint,
-  createSprint,
-  getProject,
-  getProjectIssues,
-  getSprints,
-  startSprint,
-  updateSprint,
-} from "../lib/api";
+  assignIssueToSprint, completeSprint, createSprint, getProject, getProjectIssues, getSprints, startSprint, updateSprint, } from "../lib/api";
 import ConfirmDialog from "../components/ConfirmDialog";
-import { Field, inputClass } from "../components/AuthShell";
+import { Field } from "../components/AuthShell";
+import { inputClass } from "../components/authStyles";
 
 const idOf = (item) => item?._id ?? item?.id;
 const label = (value = "") => String(value).toLowerCase().replaceAll("_", " ").replace(/^\w/, (letter) => letter.toUpperCase());
@@ -89,7 +82,11 @@ export default function ProjectSprintsPage() {
     }
   }, [projectId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    let active = true;
+    Promise.resolve().then(() => { if (active) load(); });
+    return () => { active = false; };
+  }, [load]);
 
   async function saveSprint(payload) {
     setSaving(true);

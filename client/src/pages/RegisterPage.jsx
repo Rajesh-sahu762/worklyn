@@ -1,11 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { register, verifyEmail, resendVerification } from "../lib/api";
 import {
-  AuthShell,
-  Field,
-  inputClass,
-  linkClass,
-} from "../components/AuthShell";
+  AuthShell, Field } from "../components/AuthShell";
+import { inputClass, linkClass } from "../components/authStyles";
 import { useLocation, useNavigate } from "react-router";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RESEND_SECONDS = 30; // UI throttle only; the server sets no documented limit

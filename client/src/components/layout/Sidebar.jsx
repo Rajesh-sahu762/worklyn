@@ -171,9 +171,6 @@ export default function Sidebar({
     location.pathname === "/projects" ||
     location.pathname.startsWith("/projects/");
 
-  // Keep the sidebar list compact.
-  const visibleProjects = projects.slice(0, 3);
-
   return (
     <aside
       aria-label="Primary navigation"

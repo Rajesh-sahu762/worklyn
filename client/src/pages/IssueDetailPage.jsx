@@ -6,7 +6,6 @@ import {
   MessageSquare,
   Pencil,
   Send,
-  Trash2,
   X,
   Activity,
   CircleDot,
@@ -330,12 +329,21 @@ export default function IssueDetailPage() {
   }, [issueId]);
 
   useEffect(() => {
-    loadIssue();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) loadIssue();
+    });
+    return () => { active = false; };
   }, [loadIssue]);
 
   useEffect(() => {
-    loadComments();
-    loadActivities();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (!active) return;
+      loadComments();
+      loadActivities();
+    });
+    return () => { active = false; };
   }, [loadComments, loadActivities]);
 
   const handleIssueSave = async (event) => {

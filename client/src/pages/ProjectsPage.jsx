@@ -196,7 +196,7 @@ function CreateProjectDialog({ organizationId, onClose, onCreated }) {
               <option value="KANBAN">Kanban</option>
               <option value="SCRUM">Scrum</option>
             </select>
-            <span className="mt-1 block text-[11px] text-ink-muted">This sets the project type. Board and sprint workflows are not enabled yet.</span>
+            <span className="mt-1 block text-[11px] text-ink-muted">Choose Scrum to organize work into sprints, or Kanban for a continuous-flow board.</span>
           </label>
 
           <label className="block">

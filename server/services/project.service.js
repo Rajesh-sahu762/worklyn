@@ -1,5 +1,3 @@
-const mongoose = require("mongoose");
-
 const Project = require("../models/Project");
 const ProjectMember = require("../models/ProjectMember");
 const OrganizationMember = require("../models/OrganizationMember");
@@ -8,61 +6,72 @@ const TeamMember = require("../models/TeamMember");
 const createProject = async ({
   organizationId, name, key, slug, description, projectType, lead, teamIds = [], createdBy,
 }) => {
-  const session = await mongoose.startSession();
+  const normalizedLead = lead || createdBy;
+  const leadMembership = await OrganizationMember.findOne({
+    organization: organizationId, user: normalizedLead, status: "ACTIVE",
+  });
+  if (!leadMembership) throw new Error("Project lead must be an active organization member");
+
+  const creatorMembership = await OrganizationMember.findOne({
+    organization: organizationId, user: createdBy, status: "ACTIVE",
+  });
+  if (!creatorMembership) throw new Error("Project creator must be an active organization member");
+
+  const selectedTeams = [...new Set((teamIds || []).map(String))];
+  const teams = selectedTeams.length ? await Team.find({
+    _id: { $in: selectedTeams }, organization: organizationId, isActive: true,
+  }).lean() : [];
+  if (teams.length !== selectedTeams.length) throw new Error("One or more selected teams are not active in this organization");
+
+  const [existingKey, existingSlug] = await Promise.all([
+    Project.findOne({ organization: organizationId, key: key.toUpperCase() }),
+    Project.findOne({ organization: organizationId, slug: slug.toLowerCase() }),
+  ]);
+  if (existingKey) throw new Error("Project key already exists in this organization");
+  if (existingSlug) throw new Error("Project slug already exists in this organization");
+
+  let createdProject;
   try {
-    session.startTransaction();
-    const normalizedLead = lead || createdBy;
-    const leadMembership = await OrganizationMember.findOne({
-      organization: organizationId, user: normalizedLead, status: "ACTIVE",
-    }).session(session);
-    if (!leadMembership) throw new Error("Project lead must be an active organization member");
-
-    const selectedTeams = [...new Set((teamIds || []).map(String))];
-    const teams = selectedTeams.length ? await Team.find({
-      _id: { $in: selectedTeams }, organization: organizationId, isActive: true,
-    }).session(session) : [];
-    if (teams.length !== selectedTeams.length) throw new Error("One or more selected teams are not active in this organization");
-
-    const [existingKey, existingSlug] = await Promise.all([
-      Project.findOne({ organization: organizationId, key: key.toUpperCase() }).session(session),
-      Project.findOne({ organization: organizationId, slug: slug.toLowerCase() }).session(session),
-    ]);
-    if (existingKey) throw new Error("Project key already exists in this organization");
-    if (existingSlug) throw new Error("Project slug already exists in this organization");
-
-    const [createdProject] = await Project.create([{
+    createdProject = await Project.create({
       organization: organizationId, name: name.trim(), key: key.toUpperCase().trim(),
       slug: slug.toLowerCase().trim(), description: description?.trim() || "",
       projectType: projectType || "SCRUM", lead: normalizedLead, teams: teams.map(t => t._id),
       createdBy, status: "ACTIVE",
-    }], { session });
+    });
 
     const teamMemberships = selectedTeams.length ? await TeamMember.find({
       team: { $in: selectedTeams }, status: "ACTIVE",
-    }).session(session).lean() : [];
+    }).select("user").lean() : [];
     const participantIds = new Set([String(createdBy), String(normalizedLead)]);
     teamMemberships.forEach(member => participantIds.add(String(member.user)));
 
     const organizationMembers = await OrganizationMember.find({
       organization: organizationId, user: { $in: [...participantIds] }, status: "ACTIVE",
-    }).session(session).lean();
+    }).select("user").lean();
     const activeUserIds = new Set(organizationMembers.map(m => String(m.user)));
     const projectMembers = [...participantIds].filter(id => activeUserIds.has(id)).map(userId => ({
       project: createdProject._id, user: userId,
       role: (userId === String(createdBy) || userId === String(normalizedLead)) ? "PROJECT_ADMIN" : "MEMBER",
       status: "ACTIVE", joinedAt: new Date(),
     }));
-    if (!projectMembers.some(m => m.user === String(createdBy))) {
-      throw new Error("Project creator must be an active organization member");
-    }
-    await ProjectMember.insertMany(projectMembers, { session });
-    await session.commitTransaction();
+
+    await ProjectMember.insertMany(projectMembers);
     return createdProject;
   } catch (error) {
-    if (session.inTransaction()) await session.abortTransaction();
+    // Compensating cleanup keeps failed creates from leaving an orphan project.
+    // This also works with standalone local MongoDB, where multi-document
+    // transactions are not supported.
+    if (createdProject?._id) {
+      await Promise.all([
+        ProjectMember.deleteMany({ project: createdProject._id }).catch(cleanupError =>
+          console.error("Project membership rollback failed:", cleanupError.message)
+        ),
+        Project.deleteOne({ _id: createdProject._id }).catch(cleanupError =>
+          console.error("Project rollback failed:", cleanupError.message)
+        ),
+      ]);
+    }
     throw error;
-  } finally {
-    await session.endSession();
   }
 };
 

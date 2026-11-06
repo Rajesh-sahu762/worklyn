@@ -1,8 +1,9 @@
-import { useId, useRef, useState } from "react";
+import { useId, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { createOrganization } from "../lib/api";
 import { useOrganization } from "../context/OrganizationContext";
-import { Field, inputClass, linkClass } from "../components/AuthShell";
+import { Field } from "../components/AuthShell";
+import { inputClass, linkClass } from "../components/authStyles";
 
 const NAME_MAX = 100;
 const DESC_MAX = 500;
@@ -23,7 +24,6 @@ export default function CreateOrganizationPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState("");
   const [pending, setPending] = useState(false);
-  const refs = useRef({});
 
   const onName = (v) => {
     setName(v);
@@ -47,7 +47,7 @@ export default function CreateOrganizationPage() {
     const errs = validate();
     setFieldErrors(errs);
     const firstBad = ["name", "slug", "description"].find((k) => errs[k]);
-    if (firstBad) { refs.current[firstBad]?.focus(); return; }
+    if (firstBad) { document.getElementById(id(firstBad))?.focus(); return; }
 
     setPending(true);
     try {
@@ -71,7 +71,6 @@ export default function CreateOrganizationPage() {
   const initial = (name.trim().charAt(0) || "W").toUpperCase();
   const bind = (key, extra = {}) => ({
     id: id(key),
-    ref: (el) => { refs.current[key] = el; },
     "aria-invalid": !!fieldErrors[key],
     "aria-describedby": fieldErrors[key] ? `${id(key)}-error` : extra.hint ? `${id(key)}-hint` : undefined,
     className: inputClass(!!fieldErrors[key]),

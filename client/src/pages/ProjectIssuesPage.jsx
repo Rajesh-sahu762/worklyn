@@ -183,8 +183,18 @@ export default function ProjectIssuesPage() {
   });
   const [page, setPage] = useState(1);
 
+  const issueQueryKey = [
+    projectId,
+    page,
+    searchInput.trim(),
+    filters.status,
+    filters.type,
+    filters.priority,
+    refreshKey,
+  ].join(":");
+
   const [issueState, setIssueState] = useState({
-    id: null,
+    queryKey: null,
     status: "loading",
     items: [],
     error: "",
@@ -253,19 +263,12 @@ export default function ProjectIssuesPage() {
     if (filters.type) params.type = filters.type;
     if (filters.priority) params.priority = filters.priority;
 
-    setIssueState((current) => ({
-      ...current,
-      id: projectId,
-      status: "loading",
-      error: "",
-    }));
-
     getProjectIssues(projectId, params)
       .then((items) => {
         if (cancelled) return;
 
         setIssueState({
-          id: projectId,
+          queryKey: issueQueryKey,
           status: "ready",
           items: Array.isArray(items) ? items : [],
           error: "",
@@ -275,7 +278,7 @@ export default function ProjectIssuesPage() {
         if (cancelled) return;
 
         setIssueState({
-          id: projectId,
+          queryKey: issueQueryKey,
           status: "error",
           items: [],
           error: error.message || "Couldn't load issues.",
@@ -285,18 +288,16 @@ export default function ProjectIssuesPage() {
     return () => {
       cancelled = true;
     };
-  }, [projectId, page, searchInput, filters, refreshKey]);
+  }, [projectId, page, searchInput, filters.status, filters.type, filters.priority, refreshKey, issueQueryKey]);
 
   const project = projectState.id === projectId ? projectState.project : null;
 
   const projectError = projectState.id === projectId ? projectState.error : "";
 
-  const issueStatus =
-    issueState.id === projectId ? issueState.status : "loading";
-
-  const issues = issueState.id === projectId ? issueState.items : [];
-
-  const issueError = issueState.id === projectId ? issueState.error : "";
+  const hasCurrentIssueResults = issueState.queryKey === issueQueryKey;
+  const issueStatus = hasCurrentIssueResults ? issueState.status : "loading";
+  const issues = hasCurrentIssueResults ? issueState.items : [];
+  const issueError = hasCurrentIssueResults ? issueState.error : "";
 
   const updateFilter = (name, value) => {
     setFilters((current) => ({ ...current, [name]: value }));

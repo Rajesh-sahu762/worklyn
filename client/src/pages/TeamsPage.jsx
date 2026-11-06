@@ -4,18 +4,10 @@ import { ArrowLeft, Archive, Check, ChevronRight, CircleUserRound, LoaderCircle,
 import { useAuth } from "../context/AuthContext";
 import { useOrganization } from "../context/OrganizationContext";
 import {
-  addTeamMember,
-  archiveTeam,
-  createTeam,
-  getOrgMembers,
-  getTeam,
-  getTeams,
-  removeTeamMember,
-  updateTeam,
-  updateTeamMemberRole,
-} from "../lib/api";
+  addTeamMember, archiveTeam, createTeam, getOrgMembers, getTeam, getTeams, removeTeamMember, updateTeam, updateTeamMemberRole, } from "../lib/api";
 import ConfirmDialog from "../components/ConfirmDialog";
-import { Field, inputClass } from "../components/AuthShell";
+import { Field } from "../components/AuthShell";
+import { inputClass } from "../components/authStyles";
 
 const idOf = (item) => item?._id ?? item?.id;
 const userOf = (member) => member?.user && typeof member.user === "object" ? member.user : {};
@@ -100,36 +92,34 @@ export default function TeamsPage() {
   }, [members, orgMembers]);
 
   useEffect(() => {
-    if (!organizationId) {
-      setTeams([]);
-      setTeam(null);
-      setStatus("ready");
-      return;
-    }
     let cancelled = false;
-    setStatus("loading");
-    setError("");
-    if (teamId) {
-      Promise.all([getTeam(organizationId, teamId), getOrgMembers(organizationId)])
-        .then(([result, organizationMembers]) => {
+    Promise.resolve().then(async () => {
+      if (cancelled || !organizationId) return;
+      setStatus("loading");
+      setError("");
+      try {
+        if (teamId) {
+          const [result, organizationMembers] = await Promise.all([
+            getTeam(organizationId, teamId),
+            getOrgMembers(organizationId),
+          ]);
           if (cancelled) return;
           setTeam(result.team);
           setMembers(result.members ?? []);
           setOrgMembers(organizationMembers);
-          setStatus("ready");
-        })
-        .catch((err) => {
-          if (!cancelled) { setError(err.message || "Couldn't load this team."); setStatus("error"); }
-        });
-    } else {
-      getTeams(organizationId)
-        .then((items) => {
-          if (!cancelled) { setTeams(items); setStatus("ready"); }
-        })
-        .catch((err) => {
-          if (!cancelled) { setError(err.message || "Couldn't load teams."); setStatus("error"); }
-        });
-    }
+        } else {
+          const items = await getTeams(organizationId);
+          if (cancelled) return;
+          setTeams(items);
+        }
+        setStatus("ready");
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || (teamId ? "Couldn't load this team." : "Couldn't load teams."));
+          setStatus("error");
+        }
+      }
+    });
     return () => { cancelled = true; };
   }, [organizationId, teamId]);
 

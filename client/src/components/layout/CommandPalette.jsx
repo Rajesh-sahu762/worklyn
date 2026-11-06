@@ -14,8 +14,10 @@ export default function CommandPalette({ open, onClose }) {
   const { projects, orgs, currentOrg, switchOrg } = useOrganization();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
-  const [issueResults, setIssueResults] = useState([]);
-  const [searchingIssues, setSearchingIssues] = useState(false);
+  const searchKey = `${open ? "open" : "closed"}:${query.trim().toLowerCase()}:${projects.map((project) => project.id).join(",")}`;
+  const [issueSearch, setIssueSearch] = useState({ key: "", status: "idle", items: [] });
+  const issueResults = useMemo(() => issueSearch.key === searchKey ? issueSearch.items : [], [issueSearch, searchKey]);
+  const searchingIssues = issueSearch.key === searchKey && issueSearch.status === "loading";
   const inputRef = useRef(null);
   const returnFocus = useRef(null);
 
@@ -36,15 +38,11 @@ export default function CommandPalette({ open, onClose }) {
 
   useEffect(() => {
     const q = query.trim();
-    if (!open || q.length < 2 || !projects.length) {
-      setIssueResults([]);
-      setSearchingIssues(false);
-      return;
-    }
+    if (!open || q.length < 2 || !projects.length) return;
 
     let cancelled = false;
     const timer = setTimeout(async () => {
-      setSearchingIssues(true);
+      setIssueSearch({ key: searchKey, status: "loading", items: [] });
       const results = await Promise.allSettled(
         projects.map(async (project) => {
           const issues = await getProjectIssues(project.id, { search: q, limit: 5 });
@@ -60,8 +58,11 @@ export default function CommandPalette({ open, onClose }) {
         })
       );
       if (!cancelled) {
-        setIssueResults(results.flatMap((result) => result.status === "fulfilled" ? result.value : []));
-        setSearchingIssues(false);
+        setIssueSearch({
+          key: searchKey,
+          status: "ready",
+          items: results.flatMap((result) => result.status === "fulfilled" ? result.value : []),
+        });
       }
     }, 250);
 
@@ -69,7 +70,7 @@ export default function CommandPalette({ open, onClose }) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [open, query, projects, navigate]);
+  }, [open, query, projects, navigate, searchKey]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
