@@ -1,5 +1,3 @@
-const mongoose = require("mongoose");
-
 const Project = require("../models/Project");
 const ProjectMember = require("../models/ProjectMember");
 const OrganizationMember = require("../models/OrganizationMember");
