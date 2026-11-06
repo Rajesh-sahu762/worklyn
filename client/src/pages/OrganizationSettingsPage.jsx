@@ -35,17 +35,22 @@ export default function OrganizationSettingsPage() {
   const [actionBusy, setActionBusy] = useState(false);
 
   useEffect(() => {
-    if (!orgId) {
-      setLoading(false);
-      setOrg(null);
-      return;
-    }
     let cancelled = false;
-    setLoading(true);
-    setLoadError("");
-    getOrganization(orgId)
-      .then(({ organization }) => {
-        if (cancelled) return;
+    Promise.resolve()
+      .then(() => {
+        if (cancelled) return null;
+        if (!orgId) {
+          setLoading(false);
+          setOrg(null);
+          return null;
+        }
+        setLoading(true);
+        setLoadError("");
+        return getOrganization(orgId);
+      })
+      .then((result) => {
+        if (cancelled || !result) return;
+        const { organization } = result;
         setOrg(organization);
         setName(organization?.name ?? "");
         setDescription(organization?.description ?? "");
@@ -61,16 +66,20 @@ export default function OrganizationSettingsPage() {
   }, [orgId]);
 
   useEffect(() => {
-    if (!orgId || !isOwner) {
-      setMembers([]);
-      return;
-    }
     let cancelled = false;
-    setMembersLoading(true);
-    setMembersError("");
-    getOrgMembers(orgId)
+    Promise.resolve()
+      .then(() => {
+        if (cancelled) return null;
+        if (!orgId || !isOwner) {
+          setMembers([]);
+          return null;
+        }
+        setMembersLoading(true);
+        setMembersError("");
+        return getOrgMembers(orgId);
+      })
       .then((items) => {
-        if (cancelled) return;
+        if (cancelled || !items) return;
         setMembers(items);
         const eligible = items.find((item) => item.role !== "OWNER");
         setSelectedOwner(eligible?._id ?? eligible?.id ?? "");
