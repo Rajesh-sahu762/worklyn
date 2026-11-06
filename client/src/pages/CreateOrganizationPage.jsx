@@ -2,7 +2,8 @@ import { useId, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { createOrganization } from "../lib/api";
 import { useOrganization } from "../context/OrganizationContext";
-import { Field, inputClass, linkClass } from "../components/AuthShell";
+import { Field } from "../components/AuthShell";
+import { inputClass, linkClass } from "../components/authStyles";
 
 const NAME_MAX = 100;
 const DESC_MAX = 500;
