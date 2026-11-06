@@ -1,3 +1,12 @@
+const isValidDateString = (value) => {
+  if (typeof value !== "string" || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}(T.*)?$/.test(value)) return false;
+  const datePart = value.slice(0, 10);
+  const [year, month, day] = datePart.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) return false;
+  return !Number.isNaN(Date.parse(value));
+};
+
 const mongoose = require("mongoose");
 
 const validateCreateIssue = (body = {}) => {
@@ -16,7 +25,7 @@ const validateCreateIssue = (body = {}) => {
   if (!validId(parentIssueId)) errors.parentIssueId = "Invalid parent issue ID";
   if (assigneeId && assigneeTeamId) errors.assignee = "Choose an individual or a team, not both";
   if (labels !== undefined && (!Array.isArray(labels) || labels.length > 20 || labels.some(label => typeof label !== "string" || !label.trim() || label.trim().length > 50))) errors.labels = "Provide up to 20 valid labels";
-  if (dueDate !== undefined && dueDate !== null && (typeof dueDate !== "string" || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}(T.*)?$/.test(dueDate) || Number.isNaN(Date.parse(dueDate)))) errors.dueDate = "Invalid due date";
+  if (dueDate !== undefined && dueDate !== null && !isValidDateString(dueDate)) errors.dueDate = "Invalid due date";
   if (estimate !== undefined && estimate !== null && (typeof estimate !== "number" || !Number.isFinite(estimate) || estimate < 0 || estimate > 100000)) errors.estimate = "Estimate must be a non-negative number up to 100000";
   return errors;
 };
