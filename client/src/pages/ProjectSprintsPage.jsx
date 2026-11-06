@@ -82,7 +82,11 @@ export default function ProjectSprintsPage() {
     }
   }, [projectId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    let active = true;
+    Promise.resolve().then(() => { if (active) load(); });
+    return () => { active = false; };
+  }, [load]);
 
   async function saveSprint(payload) {
     setSaving(true);
