@@ -64,15 +64,18 @@ export default function ProjectMembersPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setStatus("loading");
-    setError("");
-    Promise.all([
+    Promise.resolve().then(() => {
+      if (cancelled) return null;
+      setStatus("loading");
+      setError("");
+      return Promise.all([
       getProject(projectId),
       getProjectMembers(projectId),
       currentOrg?.id ? getOrgMembers(currentOrg.id) : Promise.resolve([]),
-    ])
-      .then(([projectResult, projectMembers, organizationMembers]) => {
-        if (cancelled) return;
+      ]);
+    }).then((result) => {
+      if (cancelled || !result) return;
+      const [projectResult, projectMembers, organizationMembers] = result;
         setProject(projectResult?.project ?? projectResult);
         setRole(projectResult?.role ?? null);
         setMembers(projectMembers);
