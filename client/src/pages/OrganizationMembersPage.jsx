@@ -13,6 +13,7 @@ import { inputClass } from "../components/authStyles";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ROLE_LABEL = { OWNER: "Owner", ADMIN: "Admin", MEMBER: "Member" };
 const ROLE_RANK = { OWNER: 0, ADMIN: 1, MEMBER: 2 };
+const EMPTY_MEMBERS = [];
 const ROLE_STYLE = {
   OWNER: "border border-accent/25 bg-accent/10 text-accent",
   ADMIN: "border border-line bg-surface-subtle text-ink",
@@ -92,6 +93,7 @@ export default function OrganizationMembersPage() {
   const [copied, setCopied] = useState(null);
 
   const key = `${orgId}#${reloadKey}`;
+  const historyKey = `${orgId ?? ""}#${historyPage}#${historyReload}`;
 
   useEffect(() => {
     if (!orgId) return;
@@ -138,8 +140,7 @@ export default function OrganizationMembersPage() {
   }, [orgId, canInvite, historyPage, historyReload, historyKey]);
 
   const status = !orgId ? "idle" : data.key !== key ? "loading" : data.error ? "error" : "ready";
-  const members = status === "ready" ? data.members : [];
-  const historyKey = `${orgId ?? ""}#${historyPage}#${historyReload}`;
+  const members = status === "ready" ? data.members : EMPTY_MEMBERS;
   const visibleHistory = history.key === historyKey ? history : emptyHistory;
   const setMembers = (update) => setData((current) => ({
     ...current,
