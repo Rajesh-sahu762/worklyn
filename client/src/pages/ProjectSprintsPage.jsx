@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import { ArrowLeft, CalendarDays, Check, CircleDot, Flag, LoaderCircle, Plus, Rocket } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, Flag, LoaderCircle, Plus, Rocket } from "lucide-react";
 import {
   assignIssueToSprint, completeSprint, createSprint, getProject, getProjectIssues, getSprints, startSprint, updateSprint, } from "../lib/api";
 import ConfirmDialog from "../components/ConfirmDialog";
