@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router";
 import { ArrowLeft, Bell, Check, ImagePlus, LoaderCircle, Save, UserRound } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -45,15 +45,6 @@ export default function ProfileSettingsPage() {
   const [profileNotice, setProfileNotice] = useState("");
   const [preferenceNotice, setPreferenceNotice] = useState("");
 
-  useEffect(() => {
-    setProfile({
-      firstName: user?.firstName ?? "",
-      lastName: user?.lastName ?? "",
-      mobile: user?.mobile ?? "",
-      profileImage: user?.profileImage ?? "",
-    });
-    setNotifications({ ...DEFAULT_NOTIFICATIONS, ...(user?.preferences?.notifications ?? {}) });
-  }, [user]);
 
   const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(" ") || user?.email || "Your profile";
 
