@@ -16,7 +16,7 @@ export default function CommandPalette({ open, onClose }) {
   const [active, setActive] = useState(0);
   const searchKey = `${open ? "open" : "closed"}:${query.trim().toLowerCase()}:${projects.map((project) => project.id).join(",")}`;
   const [issueSearch, setIssueSearch] = useState({ key: "", status: "idle", items: [] });
-  const issueResults = issueSearch.key === searchKey ? issueSearch.items : [];
+  const issueResults = useMemo(() => issueSearch.key === searchKey ? issueSearch.items : [], [issueSearch, searchKey]);
   const searchingIssues = issueSearch.key === searchKey && issueSearch.status === "loading";
   const inputRef = useRef(null);
   const returnFocus = useRef(null);
