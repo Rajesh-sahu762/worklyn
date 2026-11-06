@@ -109,22 +109,30 @@ export default function OrganizationMembersPage() {
   useEffect(() => {
     if (!orgId || !canInvite) return;
     let cancelled = false;
-    Promise.resolve().then(() => {
-      if (cancelled) return null;
-      setHistoryStatus("loading");
-      setHistoryError("");
-      return getOrgInvitations(orgId, historyPage, 5);
-    }).then((result) => {
-      if (cancelled || !result) return;
-      const { invitations, pagination } = result;
-      .then(({ invitations, pagination }) => {
-        if (!cancelled) {
-          setHistory((current) => ({ key: historyKey, items: historyPage === 1 ? invitations : [...(current.key === historyKey ? current.items : []), ...invitations], pagination }));
-          setHistoryStatus("ready");
-        }
+    Promise.resolve()
+      .then(() => {
+        if (cancelled) return null;
+        setHistoryStatus("loading");
+        setHistoryError("");
+        return getOrgInvitations(orgId, historyPage, 5);
+      })
+      .then((result) => {
+        if (cancelled || !result) return;
+        const { invitations, pagination } = result;
+        setHistory((current) => ({
+          key: historyKey,
+          items: historyPage === 1
+            ? invitations
+            : [...(current.key === historyKey ? current.items : []), ...invitations],
+          pagination,
+        }));
+        setHistoryStatus("ready");
       })
       .catch((error) => {
-        if (!cancelled) { setHistoryError(error.message); setHistoryStatus("error"); }
+        if (!cancelled) {
+          setHistoryError(error.message);
+          setHistoryStatus("error");
+        }
       });
     return () => { cancelled = true; };
   }, [orgId, canInvite, historyPage, historyReload]);
