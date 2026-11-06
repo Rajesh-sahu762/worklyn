@@ -98,3 +98,8 @@ test("update issue allows explicit assignment clearing", () => {
     data: { assignee: null, assigneeTeam: null },
   });
 });
+
+test("create and update issue reject impossible calendar dates", () => {
+  assert.ok(validateCreateIssue({ title: "Fix calendar", dueDate: "2026-02-31" }).dueDate);
+  assert.equal(validateUpdateIssue({ dueDate: "2026-02-31" }).error, "Invalid due date");
+});
