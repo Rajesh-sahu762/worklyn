@@ -135,7 +135,7 @@ export default function OrganizationMembersPage() {
         }
       });
     return () => { cancelled = true; };
-  }, [orgId, canInvite, historyPage, historyReload]);
+  }, [orgId, canInvite, historyPage, historyReload, historyKey]);
 
   const status = !orgId ? "idle" : data.key !== key ? "loading" : data.error ? "error" : "ready";
   const members = status === "ready" ? data.members : [];
@@ -355,8 +355,8 @@ export default function OrganizationMembersPage() {
           {historyStatus === "loading" && visibleHistory.items.length === 0 && <p className="px-5 py-10 text-center text-sm text-ink-muted">Loading invitation history…</p>}
           {historyStatus === "error" && <div role="alert" className="p-5 text-sm text-danger">{historyError} <button type="button" onClick={() => setHistoryReload((value) => value + 1)} className="ml-2 font-semibold underline">Try again</button></div>}
           {historyStatus === "ready" && visibleHistory.items.length === 0 && <div className="px-5 py-12 text-center"><MailPlus size={22} className="mx-auto text-ink-faint" /><p className="mt-3 text-sm font-semibold text-ink">No invitations yet</p><p className="mt-1 text-sm text-ink-muted">Invitations you create will remain visible here.</p><button type="button" onClick={() => setInviteOpen(true)} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-white hover:bg-accent-strong"><MailPlus size={15} /> Invite someone</button></div>}
-          {history.items.length > 0 && <ul className="divide-y divide-line">
-            {history.items.map((invitation) => {
+          {visibleHistory.items.length > 0 && <ul className="divide-y divide-line">
+            {visibleHistory.items.map((invitation) => {
               const inviter = invitation.invitedBy;
               const inviterName = inviter ? [inviter.firstName, inviter.lastName].filter(Boolean).join(" ") || inviter.email : "Workspace admin";
               const expired = invitation.status === "PENDING" && new Date(invitation.expiresAt) <= new Date();
@@ -376,7 +376,7 @@ export default function OrganizationMembersPage() {
               </li>;
             })}
           </ul>}
-          {history.pagination.page < history.pagination.totalPages && <div className="border-t border-line p-4 text-center"><button type="button" disabled={historyStatus === "loading"} onClick={() => { setHistoryStatus("loading"); setHistoryPage((page) => page + 1); }} className="inline-flex min-h-10 items-center justify-center rounded-control border border-line px-4 text-sm font-semibold text-ink hover:bg-surface-subtle disabled:opacity-50">{historyStatus === "loading" ? "Loading…" : "Load 5 more invitations"}</button><p className="mt-2 text-xs text-ink-faint">Showing {history.items.length} of {history.pagination.total}</p></div>}
+          {history.pagination.page < history.pagination.totalPages && <div className="border-t border-line p-4 text-center"><button type="button" disabled={historyStatus === "loading"} onClick={() => { setHistoryStatus("loading"); setHistoryPage((page) => page + 1); }} className="inline-flex min-h-10 items-center justify-center rounded-control border border-line px-4 text-sm font-semibold text-ink hover:bg-surface-subtle disabled:opacity-50">{historyStatus === "loading" ? "Loading…" : "Load 5 more invitations"}</button><p className="mt-2 text-xs text-ink-faint">Showing {visibleHistory.items.length} of {history.pagination.total}</p></div>}
         </section>
       )}
 
