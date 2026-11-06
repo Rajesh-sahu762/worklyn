@@ -6,7 +6,6 @@ import {
   MessageSquare,
   Pencil,
   Send,
-  Trash2,
   X,
   Activity,
   CircleDot,
