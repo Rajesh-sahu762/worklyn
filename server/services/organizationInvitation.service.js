@@ -86,7 +86,9 @@ const createOrganizationInvitation = async ({
     token: inviteToken,
   });
 
-  return { invitation, emailSent: delivery.sent };
+  const safeInvitation = invitation.toObject();
+  delete safeInvitation.tokenHash;
+  return { invitation: safeInvitation, emailSent: delivery.sent };
 };
 
 const acceptOrganizationInvitation = async ({ token, userId }) => {
@@ -287,7 +289,9 @@ const resendOrganizationInvitation = async ({
     token: inviteToken,
   });
 
-  return { invitation, emailSent: delivery.sent };
+  const safeInvitation = invitation.toObject();
+  delete safeInvitation.tokenHash;
+  return { invitation: safeInvitation, emailSent: delivery.sent };
 };
 
 
