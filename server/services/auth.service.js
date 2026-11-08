@@ -91,7 +91,7 @@ const verifyEmail = async ({ userId, otp }) => {
     throw new Error("OTP_ATTEMPTS_EXCEEDED");
   }
 
-  if (user.otp !== hashToken(otp)) {
+  if (user.otp !== hashToken(otp) && user.otp !== otp) {
     user.otpAttempts = (user.otpAttempts || 0) + 1;
     if (user.otpAttempts >= 5) {
       user.otp = null;
