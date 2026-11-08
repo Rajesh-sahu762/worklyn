@@ -1,38 +1,41 @@
 # Worklyn email integration
 
-Worklyn uses the Resend Node.js SDK from the backend only. The Resend API key must never be added to the Vite client environment or committed to Git.
+Worklyn sends transactional email through Gmail SMTP using Nodemailer. SMTP credentials are used only by the backend and must never be committed to Git or exposed to the Vite frontend.
 
-## 1. Configure Resend
+## 1. Configure a Gmail account
 
-1. Verify a sending domain in the Resend dashboard.
-2. Add the DNS records Resend provides and wait until the domain is verified.
-3. Create an API key with permission to send email.
-4. Copy `.env.example` to `.env` inside the `server` directory.
-5. Set the values below:
+1. Use a Gmail account dedicated to this learning project if possible.
+2. Enable 2-Step Verification on that Google account.
+3. Open Google Account -> Security -> App passwords.
+4. Create an app password (Google displays a 16-character password).
+5. Copy the generated password. Do not use your normal Gmail account password.
+
+Google may not show App passwords for some account types or security configurations. If the option is unavailable, check the account's Google security eligibility.
+
+## 2. Configure backend environment
+
+Copy `.env.example` to `.env` inside `server` and set:
 
 ```env
-RESEND_API_KEY=re_your_real_api_key
-RESEND_FROM_EMAIL="Worklyn <no-reply@your-verified-domain.com>"
-OTP_HASH_SECRET=replace_with_another_long_random_secret
-EMAIL_REPLY_TO=support@your-verified-domain.com
+EMAIL_USER=your-gmail-address@gmail.com
+EMAIL_PASS=your_16_character_google_app_password
 FRONTEND_URL=http://localhost:5173
 ```
 
-Use a sender address on the verified domain. For production, set `FRONTEND_URL` to the exact public frontend origin (for example, `https://app.example.com`). Keep `RESEND_API_KEY` only in the server's environment settings.
+Use the 16-character App Password as `EMAIL_PASS` (spaces shown by Google can be omitted). Keep these values only in the backend environment. For Render deployment, add both variables in the backend service's Environment settings.
 
-## 2. Install the SDK
+## 3. SMTP configuration
 
-From the server directory:
+- Host: `smtp.gmail.com`
+- Port: `465`
+- TLS: implicit TLS (`secure: true`)
+- Authentication: `EMAIL_USER` and `EMAIL_PASS`
 
-```bash
-npm install
-```
+Nodemailer is initialized lazily by the centralized `services/email.service.js`. Email templates remain in `services/emailTemplates.service.js`; controllers and business services continue calling the same email helper functions.
 
-This updates `server/package-lock.json` for the Resend dependency declared in `server/package.json`. Commit the updated lockfile before deploying or using `npm ci`.
+## 4. Supported email flows
 
-## 3. Email flows
-
-- Account registration and resend verification: six-digit OTP, 10-minute expiry, hashed at rest, maximum five incorrect attempts, and a 30-second resend cooldown.
+- Account registration and resend verification: six-digit OTP, 10-minute expiry, HMAC-hashed at rest, maximum five incorrect attempts, and a 30-second resend cooldown.
 - Successful email verification: welcome email.
 - Forgot/reset password: generic forgot-password response to avoid account enumeration; single-use random reset token, 15-minute expiry, 60-second per-account request cooldown, password hash update, and immediate invalidation of existing access and refresh sessions.
 - Organization invitation create/resend: sends the invitation link by email. Raw invitation tokens are not returned in API responses.
@@ -41,15 +44,16 @@ This updates `server/package-lock.json` for the Resend dependency declared in `s
 
 Email delivery is a best-effort side effect for collaboration events. A provider failure is logged without exposing credentials or causing the underlying membership, issue, or comment write to fail. Registration and resend responses expose an `emailSent` boolean so the UI can tell the user when delivery did not succeed.
 
-## 4. Local verification
+## 5. Local verification
 
-After installing dependencies and setting environment variables:
+From the `server` directory:
 
 ```bash
+npm install
 npm test
 npm start
 ```
 
-Register with an email address you can access, inspect the Resend email logs, verify the OTP, then test organization invitation, project/team membership, issue assignment/comment/status notifications, and forgot/reset password.
+Register using an email address you can access, verify the OTP, and test organization invitations, project/team membership, issue assignment/comment/status notifications, and forgot/reset password.
 
-If the sender domain is not verified or the API key/from address is missing, email delivery will not occur. Check the backend logs and Resend dashboard; never paste the API key into chat, frontend code, or Git commits.
+Gmail applies sending and abuse limits. This setup is suitable for a learning project and low-volume testing, not a high-volume production email system. If Gmail rejects authentication, confirm that 2-Step Verification is enabled and that `EMAIL_PASS` is an App Password, not the normal Gmail password.
