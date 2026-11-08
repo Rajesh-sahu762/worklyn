@@ -14,6 +14,9 @@ const getTransporter = () => {
       host: "smtp.gmail.com",
       port: 465,
       secure: true,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 20000,
       auth: { user, pass },
     });
   }
@@ -33,7 +36,7 @@ const sendEmail = async ({ to, subject, html, text }) => {
     const info = await mailer.sendMail({
       from: `Worklyn <${process.env.EMAIL_USER}>`,
       to,
-      subject: String(subject || "").replace(/[\\r\\n]+/g, " ").slice(0, 200),
+      subject: String(subject || "").replace(/[\r\n]+/g, " ").slice(0, 200),
       html,
       text,
     });
