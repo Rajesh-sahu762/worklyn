@@ -1,53 +1,49 @@
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
 const templates = require("./emailTemplates.service");
 
-let resendClient;
+let transporter;
 
-const getResendClient = () => {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return null;
-  if (!resendClient) resendClient = new Resend(apiKey);
-  return resendClient;
+const getTransporter = () => {
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS;
+
+  if (!user || !pass) return null;
+
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: { user, pass },
+    });
+  }
+
+  return transporter;
 };
 
 const sendEmail = async ({ to, subject, html, text }) => {
-  const from = process.env.RESEND_FROM_EMAIL;
-  let client;
-  try {
-    client = getResendClient();
-  } catch (error) {
-    console.error("Resend client initialization failed:", { name: error?.name || "Error" });
-    return { sent: false, reason: "EMAIL_PROVIDER_ERROR" };
-  }
+  const mailer = getTransporter();
 
-  if (!client || !from) {
-    console.warn("Email delivery skipped: RESEND_API_KEY or RESEND_FROM_EMAIL is not configured.");
+  if (!mailer) {
+    console.warn("Email delivery skipped: EMAIL_USER or EMAIL_PASS is not configured.");
     return { sent: false, reason: "EMAIL_NOT_CONFIGURED" };
   }
 
   try {
-    const { data, error } = await client.emails.send({
-      from,
-      to: [to],
-      subject: String(subject || "").replace(/[\r\n]+/g, " ").slice(0, 200),
+    const info = await mailer.sendMail({
+      from: `Worklyn <${process.env.EMAIL_USER}>`,
+      to,
+      subject: String(subject || "").replace(/[\\r\\n]+/g, " ").slice(0, 200),
       html,
       text,
-      ...(process.env.EMAIL_REPLY_TO ? { replyTo: process.env.EMAIL_REPLY_TO } : {}),
     });
 
-    if (error) {
-      console.error("Resend delivery failed:", {
-        name: error.name,
-        statusCode: error.statusCode,
-      });
-      return { sent: false, reason: "EMAIL_PROVIDER_ERROR" };
-    }
-
-    return { sent: true, messageId: data?.id || null };
+    return { sent: true, messageId: info.messageId || null };
   } catch (error) {
-    console.error("Email delivery failed:", {
+    console.error("Gmail SMTP delivery failed:", {
       name: error?.name || "Error",
-      statusCode: error?.statusCode || null,
+      code: error?.code || null,
+      responseCode: error?.responseCode || null,
     });
     return { sent: false, reason: "EMAIL_PROVIDER_ERROR" };
   }
