@@ -6,6 +6,7 @@ const Organization = require("../models/Organization");
 const generateInviteToken = require("../utils/generateInviteToken");
 
 const hashToken = require("../utils/hashToken");
+const { sendOrganizationInvitationEmail } = require("./email.service");
 
 const createOrganizationInvitation = async ({
   organizationId,
@@ -76,12 +77,16 @@ const createOrganizationInvitation = async ({
   });
 
   // Temporary development link
-  const invitationLink = `${process.env.FRONTEND_URL}/accept-invitation?token=${inviteToken}`;
+  const inviter = await User.findById(invitedBy).select("firstName lastName").lean();
+  const delivery = await sendOrganizationInvitationEmail({
+    to: normalizedEmail,
+    organizationName: organization.name,
+    inviterName: inviter ? `${inviter.firstName} ${inviter.lastName}`.trim() : "A teammate",
+    role,
+    token: inviteToken,
+  });
 
-  return {
-    invitation,
-    invitationLink,
-  };
+  return { invitation, emailSent: delivery.sent };
 };
 
 const acceptOrganizationInvitation = async ({ token, userId }) => {
@@ -270,13 +275,19 @@ const resendOrganizationInvitation = async ({
 
   await invitation.save();
 
-  const invitationLink =
-    `${process.env.FRONTEND_URL}/accept-invitation?token=${inviteToken}`;
+  const [organization, inviter] = await Promise.all([
+    Organization.findById(organizationId).select("name").lean(),
+    User.findById(invitation.invitedBy).select("firstName lastName").lean(),
+  ]);
+  const delivery = await sendOrganizationInvitationEmail({
+    to: invitation.email,
+    organizationName: organization?.name || "your organization",
+    inviterName: inviter ? `${inviter.firstName} ${inviter.lastName}`.trim() : "A teammate",
+    role: invitation.role,
+    token: inviteToken,
+  });
 
-  return {
-    invitation,
-    invitationLink,
-  };
+  return { invitation, emailSent: delivery.sent };
 };
 
 
