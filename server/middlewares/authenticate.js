@@ -36,7 +36,7 @@ const authenticate = async (req, res, next) => {
 
     // Find user
     const user = await User.findById(decoded.userId).select(
-      "-passwordHash -otp -otpExpiresAt -googleId -facebookId"
+      "-passwordHash -otp -otpExpiresAt -otpAttempts -otpLastSentAt -passwordResetTokenHash -passwordResetExpiresAt -passwordResetRequestedAt -googleId -facebookId"
     );
 
     if (!user) {
