@@ -188,6 +188,7 @@ const resetPassword = async ({ token, password }) => {
   if (!user) throw new Error("Invalid or expired password reset link");
 
   user.passwordHash = await hashPassword(password);
+  user.tokenVersion = (user.tokenVersion || 0) + 1;
   user.passwordResetTokenHash = null;
   user.passwordResetExpiresAt = null;
   await user.save();
@@ -236,7 +237,7 @@ const loginUser = async ({ email, password, userAgent, ipAddress }) => {
   }
 
   // 6. Generate tokens
-  const accessToken = generateAccessToken(user._id);
+  const accessToken = generateAccessToken(user._id, user.tokenVersion || 0);
 
   const refreshToken = generateRefreshToken(user._id);
 
@@ -345,7 +346,7 @@ const refreshAccessToken = async ({
   await storedToken.save();
 
   // 8. Generate NEW tokens
-  const newAccessToken = generateAccessToken(user._id);
+  const newAccessToken = generateAccessToken(user._id, user.tokenVersion || 0);
 
   const newRefreshToken = generateRefreshToken(user._id);
 
