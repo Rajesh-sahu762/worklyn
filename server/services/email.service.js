@@ -104,6 +104,25 @@ const sendIssueNotificationEmail = async ({
   });
 };
 
+
+const sendProjectAccessEmail = async ({ to, firstName, projectName, projectKey, role, projectId }) => {
+  const projectUrl = buildFrontendUrl(`/projects/${encodeURIComponent(projectId)}`);
+  if (!projectUrl) return { sent: false, reason: "FRONTEND_URL_NOT_CONFIGURED" };
+  return sendEmail({
+    to,
+    ...templates.projectAccessEmail({ firstName, projectName, projectKey, role, projectUrl }),
+  });
+};
+
+const sendTeamAddedEmail = async ({ to, firstName, teamName, role, teamId }) => {
+  const teamUrl = buildFrontendUrl(`/teams/${encodeURIComponent(teamId)}`);
+  if (!teamUrl) return { sent: false, reason: "FRONTEND_URL_NOT_CONFIGURED" };
+  return sendEmail({
+    to,
+    ...templates.teamAddedEmail({ firstName, teamName, role, teamUrl }),
+  });
+};
+
 module.exports = {
   sendEmail,
   sendVerificationOtpEmail,
@@ -111,4 +130,6 @@ module.exports = {
   sendOrganizationInvitationEmail,
   sendPasswordResetEmail,
   sendIssueNotificationEmail,
+  sendProjectAccessEmail,
+  sendTeamAddedEmail,
 };
