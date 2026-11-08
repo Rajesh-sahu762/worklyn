@@ -140,7 +140,13 @@ export const verifyEmail = (userId, otp) =>
 
 // POST /api/auth/resend-verification -> { data: { email } }
 export const resendVerification = (email) =>
-  request("/auth/resend-verification", { method: "POST", body: { email } }).then((r) => r);
+  request("/auth/resend-verification", { method: "POST", body: { email } });
+
+export const forgotPassword = (email) =>
+  request("/auth/forgot-password", { method: "POST", body: { email } });
+
+export const resetPassword = (token, password) =>
+  request("/auth/reset-password", { method: "POST", body: { token, password } });
 
 // POST /api/auth/refresh (cookie) -> { data: { accessToken } }
 export const refresh = () =>
