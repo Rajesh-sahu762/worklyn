@@ -35,13 +35,12 @@ const createInvitation = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "Organization invitation created successfully",
+      message: result.emailSent ? "Invitation email sent successfully" : "Invitation created, but email delivery failed. You can retry using Resend.",
 
       data: {
         invitation: result.invitation,
 
-        // Development only
-        invitationLink: result.invitationLink,
+        emailSent: result.emailSent,
       },
     });
   } catch (error) {
@@ -184,13 +183,12 @@ const resendInvitation = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Invitation resent successfully",
+      message: result.emailSent ? "Invitation email sent successfully" : "Invitation link rotated, but email delivery failed. Please retry.",
       data: {
         invitation: result.invitation,
 
         // Development only
-        invitationLink:
-          result.invitationLink,
+        emailSent: result.emailSent,
       },
     });
   } catch (error) {
