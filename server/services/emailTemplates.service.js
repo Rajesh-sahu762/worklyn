@@ -73,7 +73,7 @@ const passwordResetEmail = ({ firstName, resetUrl }) => ({
   text: `Hi ${firstName || "there"}, reset your Worklyn password using this link: ${resetUrl}. The link expires in 15 minutes.`,
 });
 
-const issueNotificationEmail = ({ firstName, actorName, issueKey, issueTitle, projectName, type, issueUrl }) => {
+const issueNotificationEmail = ({ firstName, actorName, issueKey, issueTitle, projectName, type, status, issueUrl }) => {
   const isComment = type === "ISSUE_COMMENTED";
   const isStatus = type === "ISSUE_STATUS_CHANGED";
   const action = isComment ? "commented on" : isStatus ? "updated the status of" : "assigned";
