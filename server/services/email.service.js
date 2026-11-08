@@ -29,7 +29,7 @@ const sendEmail = async ({ to, subject, html, text }) => {
     const { data, error } = await client.emails.send({
       from,
       to: [to],
-      subject: String(subject || "").replace(/[\\r\\n]+/g, " ").slice(0, 200),
+      subject: String(subject || "").replace(/[\r\n]+/g, " ").slice(0, 200),
       html,
       text,
       ...(process.env.EMAIL_REPLY_TO ? { replyTo: process.env.EMAIL_REPLY_TO } : {}),
