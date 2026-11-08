@@ -31,7 +31,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <AuthShell headline="A fresh start." subheadline="Choose a new password for your Worklyn account.">
+    <AuthShell headline="A fresh start." body="Choose a new password for your Worklyn account.">
       <h1 className="text-[26px] font-semibold tracking-tight text-ink">Reset password</h1>
       {done ? (
         <div role="status" className="mt-6 space-y-4">
