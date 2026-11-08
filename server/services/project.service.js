@@ -3,6 +3,8 @@ const ProjectMember = require("../models/ProjectMember");
 const OrganizationMember = require("../models/OrganizationMember");
 const Team = require("../models/Team");
 const TeamMember = require("../models/TeamMember");
+const User = require("../models/user");
+const { sendProjectAccessEmail } = require("./email.service");
 const createProject = async ({
   organizationId, name, key, slug, description, projectType, lead, teamIds = [], createdBy,
 }) => {
@@ -173,17 +175,28 @@ const addProjectMember = async ({ projectId, userId, role }) => {
     membership.joinedAt = new Date();
 
     await membership.save();
-    return membership;
-  }
-
-  membership = await ProjectMember.create({
+  } else {
+    membership = await ProjectMember.create({
     project: projectId,
     user: userId,
     role,
     status: "ACTIVE",
     invitedBy: null,
     joinedAt: new Date(),
-  });
+    });
+  }
+
+  const user = await User.findById(userId).select("firstName email").lean();
+  if (user?.email) {
+    await sendProjectAccessEmail({
+      to: user.email,
+      firstName: user.firstName,
+      projectName: project.name,
+      projectKey: project.key,
+      role,
+      projectId: project._id,
+    });
+  }
 
   return membership;
 };
