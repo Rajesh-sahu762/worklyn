@@ -140,7 +140,7 @@ export const verifyEmail = (userId, otp) =>
 
 // POST /api/auth/resend-verification -> { data: { email } }
 export const resendVerification = (email) =>
-  request("/auth/resend-verification", { method: "POST", body: { email } });
+  request("/auth/resend-verification", { method: "POST", body: { email } }).then((r) => r);
 
 // POST /api/auth/refresh (cookie) -> { data: { accessToken } }
 export const refresh = () =>
@@ -383,11 +383,10 @@ export const updateOrgMemberRole = (orgId, memberId, role) =>
 export const removeOrgMember = (orgId, memberId) =>
   request(`/organization/${orgId}/members/${memberId}`, { method: "DELETE" });
 
-// The dev invitation link's key isn't documented; take the first link/url-like string.
-const linkOf = (d = {}) =>
-  d.invitationLink ?? d.inviteLink ?? d.link ?? d.url ??
-  Object.entries(d).find(([k, v]) => /link|url/i.test(k) && typeof v === "string")?.[1] ?? "";
-const invitationResult = (r) => ({ invitation: r.data.invitation ?? r.data, link: linkOf(r.data) });
+const invitationResult = (r) => ({
+  invitation: r.data.invitation ?? r.data,
+  emailSent: r.data.emailSent === true,
+});
 
 // GET /api/organization/:orgId/invitations?page=&limit= (owner/admin)
 export const getOrgInvitations = (orgId, page = 1, limit = 5) =>
