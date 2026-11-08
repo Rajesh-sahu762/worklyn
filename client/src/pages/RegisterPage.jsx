@@ -161,7 +161,8 @@ export default function RegisterPage() {
       };
       const data = await register(payload);
       setAccount({ userId: data.userId, email: data.email || payload.email });
-      setCooldown(RESEND_SECONDS);
+      setNotice(data.emailSent ? "" : "Your account was created, but the verification email could not be sent. Use Resend below to try again.");
+      setCooldown(data.emailSent ? RESEND_SECONDS : 0);
       setStep("verify");
     } catch (err) {
       setFieldErrors(err.fieldErrors || {});
@@ -199,9 +200,13 @@ export default function RegisterPage() {
     setOtpError("");
     setNotice("");
     try {
-      await resendVerification(account.email);
-      setNotice(`A new code was requested for ${account.email}.`);
-      setCooldown(RESEND_SECONDS);
+      const result = await resendVerification(account.email);
+      if (!result.data?.emailSent) {
+        setOtpError("The verification email could not be sent. Please try again shortly.");
+      } else {
+        setNotice(`A new code was sent to ${account.email}.`);
+        setCooldown(RESEND_SECONDS);
+      }
     } catch (err) {
       setOtpError(err.message);
     } finally {
