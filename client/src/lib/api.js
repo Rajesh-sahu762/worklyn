@@ -49,6 +49,8 @@ const NO_REFRESH = new Set([
   "/auth/register",
   "/auth/verify-email",
   "/auth/resend-verification",
+  "/auth/forgot-password",
+  "/auth/reset-password",
   "/auth/refresh",
   "/auth/logout",
 ]);
