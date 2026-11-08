@@ -13,6 +13,7 @@ Worklyn uses the Resend Node.js SDK from the backend only. The Resend API key mu
 ```env
 RESEND_API_KEY=re_your_real_api_key
 RESEND_FROM_EMAIL="Worklyn <no-reply@your-verified-domain.com>"
+OTP_HASH_SECRET=replace_with_another_long_random_secret
 EMAIL_REPLY_TO=support@your-verified-domain.com
 FRONTEND_URL=http://localhost:5173
 ```
