@@ -171,7 +171,7 @@ const resendVerificationOtpController = async (req, res) => {
 
 const forgotPasswordController = async (req, res) => {
   const email = req.body?.email;
-  if (typeof email !== "string" || email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email.trim())) {
+  if (typeof email !== "string" || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
     return res.status(400).json({ success: false, message: "Enter a valid email address" });
   }
   try {
