@@ -156,9 +156,13 @@ const requestPasswordReset = async ({ email }) => {
   const normalizedEmail = String(email || "").trim().toLowerCase();
   const user = await User.findOne({ email: normalizedEmail, isDeleted: false, deactivatedAt: null });
   if (user && user.isVerified && user.passwordHash) {
+    if (user.passwordResetRequestedAt && Date.now() - user.passwordResetRequestedAt.getTime() < 60_000) {
+      return { accepted: true };
+    }
     const token = crypto.randomBytes(32).toString("hex");
     user.passwordResetTokenHash = hashToken(token);
     user.passwordResetExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    user.passwordResetRequestedAt = new Date();
     await user.save();
     const delivery = await sendPasswordResetEmail({ to: user.email, firstName: user.firstName, token });
     if (!delivery.sent) {
