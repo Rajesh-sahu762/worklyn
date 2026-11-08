@@ -100,7 +100,6 @@ const verifyEmailController = async (req, res) => {
       "Verification OTP not found",
       "OTP has expired",
       "Invalid OTP",
-      "OTP_ATTEMPTS_EXCEEDED",
     ];
 
     if (error.message === "OTP_ATTEMPTS_EXCEEDED") {
