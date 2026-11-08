@@ -4,7 +4,7 @@ import { forgotPassword } from "../lib/api";
 import { AuthShell, Field } from "../components/AuthShell";
 import { inputClass, linkClass } from "../components/authStyles";
 
-const EMAIL_RE = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
