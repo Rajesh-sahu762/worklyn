@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <AuthShell headline="Get back to work." subheadline="We'll help you securely reset your password.">
+    <AuthShell headline="Get back to work." body="We'll help you securely reset your password.">
       <h1 className="text-[26px] font-semibold tracking-tight text-ink">Forgot password?</h1>
       <p className="mt-1.5 text-[15px] text-ink-muted">Enter the email address associated with your Worklyn account.</p>
       {sent ? (
