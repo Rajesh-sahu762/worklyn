@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import {
-  Check, Copy, History, MailPlus, RefreshCw, Search, Shield, ShieldCheck, UserMinus, Users, X, XCircle, } from "lucide-react";
+  History, MailPlus, RefreshCw, Search, Shield, ShieldCheck, UserMinus, Users, X, XCircle, } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useOrganization } from "../context/OrganizationContext";
 import {
