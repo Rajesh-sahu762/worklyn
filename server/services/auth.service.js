@@ -8,6 +8,7 @@ const {
   generateRefreshToken,
 } = require("../utils/generateToken");
 const hashToken = require("../utils/hashToken");
+const hashOtp = require("../utils/hashOtp");
 const crypto = require("crypto");
 const { sendVerificationOtpEmail, sendWelcomeEmail, sendPasswordResetEmail } = require("./email.service");
 
@@ -47,7 +48,7 @@ const registerUser = async ({
 
     isVerified: false,
 
-    otp: hashToken(otp),
+    otp: hashOtp(otp),
     otpExpiresAt,
     otpAttempts: 0,
     otpLastSentAt: new Date(),
@@ -91,7 +92,7 @@ const verifyEmail = async ({ userId, otp }) => {
     throw new Error("OTP_ATTEMPTS_EXCEEDED");
   }
 
-  if (user.otp !== hashToken(otp) && user.otp !== otp) {
+  if (user.otp !== hashOtp(otp) && user.otp !== otp) {
     user.otpAttempts = (user.otpAttempts || 0) + 1;
     if (user.otpAttempts >= 5) {
       user.otp = null;
@@ -141,7 +142,7 @@ const resendVerificationOtp = async ({ email }) => {
   }
 
   const otp = generateOtp();
-  user.otp = hashToken(otp);
+  user.otp = hashOtp(otp);
   user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
   user.otpAttempts = 0;
   user.otpLastSentAt = new Date();
