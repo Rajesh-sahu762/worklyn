@@ -1,5 +1,7 @@
 const Team = require("../models/Team");
 const TeamMember = require("../models/TeamMember");
+const User = require("../models/user");
+const { sendTeamAddedEmail } = require("./email.service");
 const OrganizationMember = require("../models/OrganizationMember");
 
 const getTeamById = async (teamId) => {
@@ -94,6 +96,14 @@ const addTeamMember = async ({ organizationId, teamId, userId, role = "MEMBER" }
       status: "ACTIVE",
       joinedAt: new Date(),
     });
+  }
+
+  const [user, team] = await Promise.all([
+    User.findById(userId).select("firstName email").lean(),
+    Team.findById(teamId).select("name").lean(),
+  ]);
+  if (user?.email && team) {
+    await sendTeamAddedEmail({ to: user.email, firstName: user.firstName, teamName: team.name, role, teamId });
   }
 
   return TeamMember.findById(membership._id)
