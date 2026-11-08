@@ -187,7 +187,6 @@ const resendInvitation = async (req, res) => {
       data: {
         invitation: result.invitation,
 
-        // Development only
         emailSent: result.emailSent,
       },
     });
