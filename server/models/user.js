@@ -82,6 +82,11 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    otpAttempts: { type: Number, default: 0, min: 0, max: 5 },
+    otpLastSentAt: { type: Date, default: null },
+    passwordResetTokenHash: { type: String, default: null, index: true },
+    passwordResetExpiresAt: { type: Date, default: null },
+
     googleId: {
       type: String,
       default: null,
