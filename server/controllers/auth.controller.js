@@ -103,6 +103,10 @@ const verifyEmailController = async (req, res) => {
       "OTP_ATTEMPTS_EXCEEDED",
     ];
 
+    if (error.message === "OTP_ATTEMPTS_EXCEEDED") {
+      return res.status(429).json({ success: false, message: "Too many incorrect codes. Request a new verification email." });
+    }
+
     if (clientErrors.includes(error.message)) {
       return res.status(400).json({
         success: false,
@@ -121,10 +125,10 @@ const resendVerificationOtpController = async (req, res) => {
   try {
     const { email } = req.body;
 
-    if (!email) {
+    if (typeof email !== "string" || email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email.trim())) {
       return res.status(400).json({
         success: false,
-        message: "Email is required",
+        message: "Enter a valid email address",
       });
     }
 
@@ -188,6 +192,9 @@ const forgotPasswordController = async (req, res) => {
 
 const resetPasswordController = async (req, res) => {
   const { token, password } = req.body || {};
+  if (Object.keys(req.body || {}).some((field) => !["token", "password"].includes(field))) {
+    return res.status(400).json({ success: false, message: "Unknown reset field supplied" });
+  }
   if (typeof token !== "string" || typeof password !== "string" || password.length < 8 || password.length > 128) {
     return res.status(400).json({ success: false, message: "A valid reset token and password of 8–128 characters are required" });
   }
