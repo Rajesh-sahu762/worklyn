@@ -46,6 +46,10 @@ const authenticate = async (req, res, next) => {
       });
     }
 
+    if ((decoded.tokenVersion ?? 0) !== (user.tokenVersion ?? 0)) {
+      return res.status(401).json({ success: false, message: "Session has been revoked" });
+    }
+
     if (user.isDeleted) {
       return res.status(401).json({
         success: false,
