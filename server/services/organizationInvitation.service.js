@@ -1,6 +1,6 @@
 const OrganizationInvitation = require("../models/OrganizationInvitation");
 const OrganizationMember = require("../models/OrganizationMember");
-const User = require("../models/User");
+const User = require("../models/user");
 const Organization = require("../models/Organization");
 
 const generateInviteToken = require("../utils/generateInviteToken");
