@@ -4,6 +4,8 @@ const {
   register,
   verifyEmailController,
   resendVerificationOtpController,
+  forgotPasswordController,
+  resetPasswordController,
   login,
   getMe,
   refresh,
@@ -26,6 +28,10 @@ router.post("/logout", logout);
 router.post("/verify-email", verifyEmailController);
 
 router.post("/resend-verification", resendVerificationOtpController);
+
+router.post("/forgot-password", forgotPasswordController);
+
+router.post("/reset-password", resetPasswordController);
 
 
 
