@@ -89,8 +89,6 @@ export default function OrganizationMembersPage() {
   const [historyStatus, setHistoryStatus] = useState("loading");
   const [historyError, setHistoryError] = useState("");
   const [invitationBusy, setInvitationBusy] = useState(null);
-  const [freshLinks, setFreshLinks] = useState({});
-  const [copied, setCopied] = useState(null);
 
   const key = `${orgId}#${reloadKey}`;
   const historyKey = `${orgId ?? ""}#${historyPage}#${historyReload}`;
@@ -175,16 +173,14 @@ export default function OrganizationMembersPage() {
     setInviteBusy(true);
     setInviteError({ field: "", form: "" });
     try {
-      const { invitation, link } = await createInvitation(orgId, email, invite.role);
-      const invitationId = invitation?._id ?? invitation?.id;
-      if (invitationId && link) setFreshLinks((current) => ({ ...current, [invitationId]: link }));
+      const { emailSent } = await createInvitation(orgId, email, invite.role);
       setHistoryPage(1);
       setHistory({ key: `${orgId ?? ""}#1#${historyReload + 1}`, ...emptyHistory });
       setHistoryReload((value) => value + 1);
       setActiveTab("history");
       setInvite({ email: "", role: "MEMBER" });
       setInviteOpen(false);
-      setNotice({ ok: true, text: `Invitation created for ${email}. Share the link below.` });
+      setNotice({ ok: emailSent, text: emailSent ? `Invitation email sent to ${email}.` : `Invitation was created for ${email}, but email delivery failed. Use Resend to try again.` });
     } catch (err) {
       const field = err.fieldErrors?.email ?? "";
       setInviteError({ field, form: field ? "" : err.message });
@@ -196,10 +192,9 @@ export default function OrganizationMembersPage() {
   async function resend(invitation) {
     setInvitationBusy(invitation._id);
     try {
-      const { invitation: updated, link } = await resendInvitation(orgId, invitation._id);
-      if (link) setFreshLinks((current) => ({ ...current, [invitation._id]: link }));
+      const { invitation: updated, emailSent } = await resendInvitation(orgId, invitation._id);
       setHistory((current) => ({ ...current, items: current.items.map((item) => item._id === invitation._id ? { ...item, ...updated } : item) }));
-      setNotice({ ok: true, text: `A fresh invitation link was generated for ${invitation.email}. Copy it from this history row.` });
+      setNotice({ ok: emailSent, text: emailSent ? `Invitation email sent to ${invitation.email}.` : `The invitation token was rotated, but email delivery failed. Please retry.` });
     } catch (error) {
       setNotice({ ok: false, text: error.message });
     } finally {
@@ -220,17 +215,6 @@ export default function OrganizationMembersPage() {
     }
   }
 
-  async function copyInvitationLink(invitation) {
-    const link = freshLinks[invitation._id];
-    if (!link) return;
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopied(invitation._id);
-      window.setTimeout(() => setCopied((value) => value === invitation._id ? null : value), 1800);
-    } catch {
-      setNotice({ ok: false, text: "Couldn't copy automatically. Try generating a fresh link again." });
-    }
-  }
 
   async function changeRole(member, role) {
     if (role === member.role || pendingId) return;
@@ -369,7 +353,7 @@ export default function OrganizationMembersPage() {
                   <div className="text-left text-xs leading-5 text-ink-faint sm:text-right"><p>Invited {fmt(invitation.createdAt)}</p><p>By {inviterName}</p>{invitation.acceptedAt && <p>Accepted {fmt(invitation.acceptedAt)}</p>}{invitation.expiresAt && displayStatus === "PENDING" && <p>Expires {fmt(invitation.expiresAt)}</p>}</div>
                 </div>
                 {displayStatus === "PENDING" && <div className="flex flex-wrap items-center gap-2">
-                  {freshLinks[invitation._id] && <button type="button" onClick={() => copyInvitationLink(invitation)} className="inline-flex min-h-9 items-center gap-1.5 rounded-control border border-line px-3 text-sm font-medium text-ink hover:bg-surface-subtle">{copied === invitation._id ? <Check size={14} /> : <Copy size={14} />}{copied === invitation._id ? "Copied" : "Copy fresh link"}</button>}
+                  
                   <button type="button" onClick={() => resend(invitation)} disabled={invitationBusy === invitation._id} className="inline-flex min-h-9 items-center gap-1.5 rounded-control px-3 text-sm font-medium text-accent-support hover:bg-surface-subtle disabled:opacity-50"><RefreshCw size={14} /> Resend</button>
                   <button type="button" onClick={() => cancel(invitation)} disabled={invitationBusy === invitation._id} className="inline-flex min-h-9 items-center gap-1.5 rounded-control px-3 text-sm font-medium text-danger hover:bg-danger/5 disabled:opacity-50"><X size={14} /> Cancel</button>
                   {invitationBusy === invitation._id && <span className="text-xs text-ink-muted">Updating…</span>}
@@ -529,7 +513,7 @@ export default function OrganizationMembersPage() {
         }}
       >
         <div className="space-y-4">
-          <p className="text-sm leading-5 text-ink-muted">Send an invitation link to a teammate. You can copy and share the link after creating it.</p>
+          <p className="text-sm leading-5 text-ink-muted">Send an invitation email to a teammate. They can accept it using the email address you invite.</p>
           {inviteError.form && <p role="alert" className="rounded-control border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-ink">{inviteError.form}</p>}
           <Field id="invite-email" label="Email address" hint="Use the email address your teammate will sign in with." error={inviteError.field}>
             <input
