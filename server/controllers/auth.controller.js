@@ -103,10 +103,6 @@ const verifyEmailController = async (req, res) => {
       "OTP_ATTEMPTS_EXCEEDED",
     ];
 
-    if (error.message === "Please wait before requesting another verification code") {
-      return res.status(429).json({ success: false, message: error.message });
-    }
-
     if (clientErrors.includes(error.message)) {
       return res.status(400).json({
         success: false,
@@ -146,6 +142,10 @@ const resendVerificationOtpController = async (req, res) => {
       "Resend Verification OTP Error:",
       error
     );
+
+    if (error.message === "Please wait before requesting another verification code") {
+      return res.status(429).json({ success: false, message: error.message });
+    }
 
     const clientErrors = [
       "User not found",
