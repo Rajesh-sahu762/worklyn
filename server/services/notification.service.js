@@ -34,12 +34,12 @@ const createNotifications = async (items = []) => {
     })), { ordered: false });
 
     const emailItems = valid.filter((item) =>
-      ["ISSUE_ASSIGNED", "ISSUE_COMMENTED"].includes(item.type)
+      ["ISSUE_ASSIGNED", "ISSUE_COMMENTED", "ISSUE_STATUS_CHANGED"].includes(item.type)
     );
     if (emailItems.length) {
       const [issues, projects, actors] = await Promise.all([
         Issue.find({ _id: { $in: emailItems.map((item) => item.issueId) } })
-          .select("issueKey title project").lean(),
+          .select("issueKey title project status").lean(),
         Project.find({ _id: { $in: emailItems.map((item) => item.projectId) } })
           .select("name").lean(),
         User.find({ _id: { $in: emailItems.map((item) => item.actorId).filter(Boolean) } })
@@ -63,6 +63,7 @@ const createNotifications = async (items = []) => {
           issueTitle: issue.title,
           projectName: project?.name || "your project",
           type: item.type,
+          status: issue.status,
           projectId: item.projectId,
           issueId: item.issueId,
         });
