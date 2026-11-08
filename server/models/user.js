@@ -86,6 +86,7 @@ const userSchema = new mongoose.Schema(
     otpLastSentAt: { type: Date, default: null },
     passwordResetTokenHash: { type: String, default: null, index: true },
     passwordResetExpiresAt: { type: Date, default: null },
+    passwordResetRequestedAt: { type: Date, default: null },
 
     googleId: {
       type: String,
