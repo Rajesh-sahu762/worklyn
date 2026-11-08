@@ -243,6 +243,8 @@ export default function LoginPage() {
               </div>
             </Field>
 
+            <div className="-mt-2 text-right"><Link to="/forgot-password" className="text-sm font-medium text-accent-support underline underline-offset-2 hover:text-ink">Forgot password?</Link></div>
+
             <button
               type="submit"
               disabled={pending}
