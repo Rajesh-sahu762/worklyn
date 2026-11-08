@@ -84,10 +84,10 @@ const issueNotificationEmail = ({ firstName, actorName, issueKey, issueTitle, pr
       preheader: `${actorName || "A teammate"} ${action} ${issueKey}.`,
       heading: isComment ? "New issue comment" : isStatus ? "Issue status updated" : "An issue was assigned to you",
       content: `<p style="color:#5f6673;font-size:14px;line-height:1.7">Hi ${escapeHtml(firstName || "there")}, <strong>${escapeHtml(actorName || "A teammate")}</strong> ${action} <strong>${escapeHtml(issueKey)}</strong> in ${escapeHtml(projectName || "your project")}.</p>
-        <div style="padding:16px;border:1px solid #e6e8ec;border-radius:10px;background:#fafbfc"><div style="font-size:11px;color:#858b98;font-weight:700">${escapeHtml(issueKey)}</div><div style="margin-top:6px;font-size:15px;font-weight:700">${escapeHtml(issueTitle)}</div></div>
+        <div style="padding:16px;border:1px solid #e6e8ec;border-radius:10px;background:#fafbfc"><div style="font-size:11px;color:#858b98;font-weight:700">${escapeHtml(issueKey)}</div><div style="margin-top:6px;font-size:15px;font-weight:700">${escapeHtml(issueTitle)}</div>${isStatus ? `<div style="margin-top:8px;font-size:12px;color:#5f6673">New status: <strong>${escapeHtml(String(status || "updated").replaceAll("_", " ").toLowerCase())}</strong></div>` : ""}</div>
         ${button(issueUrl, "Open issue")}`,
     }),
-    text: `Hi ${firstName || "there"}, ${actorName || "A teammate"} ${action} ${issueKey} in ${projectName || "your project"}: ${issueTitle}. Open it: ${issueUrl}`,
+    text: `Hi ${firstName || "there"}, ${actorName || "A teammate"} ${action} ${issueKey} in ${projectName || "your project"}: ${issueTitle}. ${isStatus ? `New status: ${status || "updated"}.` : ""} Open it: ${issueUrl}`,
   };
 };
 
