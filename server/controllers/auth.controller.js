@@ -1,5 +1,5 @@
 const { validateRegister } = require("../validators/auth.validator");
-const { registerUser , verifyEmail , resendVerificationOtp, loginUser, refreshAccessToken, logoutUser } = require("../services/auth.service");
+const { registerUser , verifyEmail , resendVerificationOtp, requestPasswordReset, resetPassword, loginUser, refreshAccessToken, logoutUser } = require("../services/auth.service");
 
 const register = async (req, res) => {
   try {
@@ -100,7 +100,12 @@ const verifyEmailController = async (req, res) => {
       "Verification OTP not found",
       "OTP has expired",
       "Invalid OTP",
+      "OTP_ATTEMPTS_EXCEEDED",
     ];
+
+    if (error.message === "Please wait before requesting another verification code") {
+      return res.status(429).json({ success: false, message: error.message });
+    }
 
     if (clientErrors.includes(error.message)) {
       return res.status(400).json({
@@ -133,7 +138,7 @@ const resendVerificationOtpController = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Verification OTP sent successfully",
+      message: result.emailSent ? "Verification email sent successfully" : "Verification email could not be sent. Please try again shortly.",
       data: result,
     });
   } catch (error) {
@@ -162,6 +167,41 @@ const resendVerificationOtpController = async (req, res) => {
   }
 };
 
+
+
+const forgotPasswordController = async (req, res) => {
+  const email = req.body?.email;
+  if (typeof email !== "string" || email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email.trim())) {
+    return res.status(400).json({ success: false, message: "Enter a valid email address" });
+  }
+  try {
+    await requestPasswordReset({ email });
+    return res.status(200).json({
+      success: true,
+      message: "If an eligible account exists for this email, a password reset link will be sent.",
+    });
+  } catch (error) {
+    console.error("Forgot password error:", { name: error?.name || "Error" });
+    return res.status(500).json({ success: false, message: "Unable to process your request right now" });
+  }
+};
+
+const resetPasswordController = async (req, res) => {
+  const { token, password } = req.body || {};
+  if (typeof token !== "string" || typeof password !== "string" || password.length < 8 || password.length > 128) {
+    return res.status(400).json({ success: false, message: "A valid reset token and password of 8–128 characters are required" });
+  }
+  try {
+    await resetPassword({ token, password });
+    return res.status(200).json({ success: true, message: "Password reset successfully. Please sign in again." });
+  } catch (error) {
+    if (error.message === "Invalid or expired password reset link") {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+    console.error("Reset password error:", { name: error?.name || "Error" });
+    return res.status(500).json({ success: false, message: "Unable to reset your password right now" });
+  }
+};
 
 const login = async (req, res) => {
   try {
@@ -305,6 +345,8 @@ module.exports = {
   register,
   verifyEmailController,
   resendVerificationOtpController,
+  forgotPasswordController,
+  resetPasswordController,
   login,
   getMe,
   refresh,
