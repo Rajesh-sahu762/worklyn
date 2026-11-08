@@ -110,8 +110,12 @@ export default function LoginPage() {
     setResending(true);
     setNotice("");
     try {
-      await resendVerification(email.trim().toLowerCase());
-      setNotice("A new verification code has been requested for this email.");
+      const result = await resendVerification(email.trim().toLowerCase());
+      if (result.data?.emailSent) {
+        setNotice("A new verification code has been sent to this email.");
+      } else {
+        setFormError("The verification email could not be sent. Please try again shortly.");
+      }
     } catch (err) {
       setFormError(err.message);
     } finally {
