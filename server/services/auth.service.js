@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const User = require("../models/user");
 const generateOtp = require("../utils/generateOtp");
 const RefreshToken = require("../models/RefreshToken");
 const { hashPassword, comparePassword } = require("../utils/hashPassword");
@@ -8,6 +8,8 @@ const {
   generateRefreshToken,
 } = require("../utils/generateToken");
 const hashToken = require("../utils/hashToken");
+const crypto = require("crypto");
+const { sendVerificationOtpEmail, sendWelcomeEmail, sendPasswordResetEmail } = require("./email.service");
 
 const registerUser = async ({
   firstName,
@@ -45,18 +47,20 @@ const registerUser = async ({
 
     isVerified: false,
 
-    otp,
+    otp: hashToken(otp),
     otpExpiresAt,
+    otpAttempts: 0,
+    otpLastSentAt: new Date(),
 
     provider: "local",
   });
 
-  // Development only
-  console.log(`OTP for ${user.email}: ${otp}`);
+  const delivery = await sendVerificationOtpEmail({ to: user.email, firstName: user.firstName, otp });
 
   return {
     userId: user._id,
     email: user.email,
+    emailSent: delivery.sent,
   };
 };
 
@@ -83,8 +87,18 @@ const verifyEmail = async ({ userId, otp }) => {
     throw new Error("OTP has expired");
   }
 
-  if (user.otp !== otp) {
-    throw new Error("Invalid OTP");
+  if ((user.otpAttempts || 0) >= 5) {
+    throw new Error("OTP_ATTEMPTS_EXCEEDED");
+  }
+
+  if (user.otp !== hashToken(otp)) {
+    user.otpAttempts = (user.otpAttempts || 0) + 1;
+    if (user.otpAttempts >= 5) {
+      user.otp = null;
+      user.otpExpiresAt = null;
+    }
+    await user.save();
+    throw new Error(user.otpAttempts >= 5 ? "OTP_ATTEMPTS_EXCEEDED" : "Invalid OTP");
   }
 
   user.isVerified = true;
@@ -92,8 +106,11 @@ const verifyEmail = async ({ userId, otp }) => {
   // OTP ko use hone ke baad remove kar denge
   user.otp = null;
   user.otpExpiresAt = null;
+  user.otpAttempts = 0;
+  user.otpLastSentAt = null;
 
   await user.save();
+  await sendWelcomeEmail({ to: user.email, firstName: user.firstName });
 
   return {
     userId: user._id,
@@ -119,21 +136,63 @@ const resendVerificationOtp = async ({ email }) => {
     throw new Error("Email is already verified");
   }
 
+  if (user.otpLastSentAt && Date.now() - user.otpLastSentAt.getTime() < 30_000) {
+    throw new Error("Please wait before requesting another verification code");
+  }
+
   const otp = generateOtp();
-
-  const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-  user.otp = otp;
-  user.otpExpiresAt = otpExpiresAt;
-
+  user.otp = hashToken(otp);
+  user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  user.otpAttempts = 0;
+  user.otpLastSentAt = new Date();
   await user.save();
 
-  // Development only
-  console.log(`New OTP for ${user.email}: ${otp}`);
+  const delivery = await sendVerificationOtpEmail({ to: user.email, firstName: user.firstName, otp });
+  return { email: user.email, emailSent: delivery.sent };
+};
 
-  return {
-    email: user.email,
-  };
+
+const requestPasswordReset = async ({ email }) => {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail, isDeleted: false, deactivatedAt: null });
+  if (user && user.isVerified && user.passwordHash) {
+    const token = crypto.randomBytes(32).toString("hex");
+    user.passwordResetTokenHash = hashToken(token);
+    user.passwordResetExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    await user.save();
+    const delivery = await sendPasswordResetEmail({ to: user.email, firstName: user.firstName, token });
+    if (!delivery.sent) {
+      user.passwordResetTokenHash = null;
+      user.passwordResetExpiresAt = null;
+      await user.save();
+    }
+  }
+  // Keep the response identical whether or not an account exists.
+  return { accepted: true };
+};
+
+const resetPassword = async ({ token, password }) => {
+  if (typeof token !== "string" || !/^[a-f0-9]{64}$/i.test(token)) {
+    throw new Error("Invalid or expired password reset link");
+  }
+  const user = await User.findOne({
+    passwordResetTokenHash: hashToken(token),
+    passwordResetExpiresAt: { $gt: new Date() },
+    isDeleted: false,
+    deactivatedAt: null,
+  });
+  if (!user) throw new Error("Invalid or expired password reset link");
+
+  user.passwordHash = await hashPassword(password);
+  user.passwordResetTokenHash = null;
+  user.passwordResetExpiresAt = null;
+  await user.save();
+
+  await RefreshToken.updateMany(
+    { user: user._id, revokedAt: null },
+    { $set: { revokedAt: new Date() } }
+  );
+  return { email: user.email };
 };
 
 const loginUser = async ({ email, password, userAgent, ipAddress }) => {
@@ -332,6 +391,8 @@ module.exports = {
   registerUser,
   verifyEmail,
   resendVerificationOtp,
+  requestPasswordReset,
+  resetPassword,
   loginUser,
   refreshAccessToken,
   logoutUser
