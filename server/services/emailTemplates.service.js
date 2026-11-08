@@ -75,13 +75,14 @@ const passwordResetEmail = ({ firstName, resetUrl }) => ({
 
 const issueNotificationEmail = ({ firstName, actorName, issueKey, issueTitle, projectName, type, issueUrl }) => {
   const isComment = type === "ISSUE_COMMENTED";
-  const action = isComment ? "commented on" : "assigned";
+  const isStatus = type === "ISSUE_STATUS_CHANGED";
+  const action = isComment ? "commented on" : isStatus ? "updated the status of" : "assigned";
   return {
-    subject: `${issueKey}: ${isComment ? "New comment" : "Issue assigned to you"}`,
+    subject: `${issueKey}: ${isComment ? "New comment" : isStatus ? "Status updated" : "Issue assigned to you"}`,
     preheader: `${actorName || "A teammate"} ${action} ${issueKey}.`,
     html: layout({
       preheader: `${actorName || "A teammate"} ${action} ${issueKey}.`,
-      heading: isComment ? "New issue comment" : "An issue was assigned to you",
+      heading: isComment ? "New issue comment" : isStatus ? "Issue status updated" : "An issue was assigned to you",
       content: `<p style="color:#5f6673;font-size:14px;line-height:1.7">Hi ${escapeHtml(firstName || "there")}, <strong>${escapeHtml(actorName || "A teammate")}</strong> ${action} <strong>${escapeHtml(issueKey)}</strong> in ${escapeHtml(projectName || "your project")}.</p>
         <div style="padding:16px;border:1px solid #e6e8ec;border-radius:10px;background:#fafbfc"><div style="font-size:11px;color:#858b98;font-weight:700">${escapeHtml(issueKey)}</div><div style="margin-top:6px;font-size:15px;font-weight:700">${escapeHtml(issueTitle)}</div></div>
         ${button(issueUrl, "Open issue")}`,
@@ -90,10 +91,37 @@ const issueNotificationEmail = ({ firstName, actorName, issueKey, issueTitle, pr
   };
 };
 
+
+const projectAccessEmail = ({ firstName, projectName, projectKey, role, projectUrl }) => ({
+  subject: `You've been added to ${projectName} on Worklyn`,
+  preheader: `You now have access to ${projectName}.`,
+  html: layout({
+    preheader: `You now have access to ${projectName}.`,
+    heading: "Project access granted",
+    content: `<p style="color:#5f6673;font-size:14px;line-height:1.7">Hi ${escapeHtml(firstName || "there")}, you've been added to <strong>${escapeHtml(projectName)}</strong> (${escapeHtml(projectKey)}) as a <strong>${escapeHtml(role.toLowerCase())}</strong>.</p>
+      ${button(projectUrl, "Open project")}`,
+  }),
+  text: `Hi ${firstName || "there"}, you've been added to ${projectName} (${projectKey}) as a ${role.toLowerCase()}. Open it: ${projectUrl}`,
+});
+
+const teamAddedEmail = ({ firstName, teamName, role, teamUrl }) => ({
+  subject: `You've joined the ${teamName} team on Worklyn`,
+  preheader: `You are now a member of ${teamName}.`,
+  html: layout({
+    preheader: `You are now a member of ${teamName}.`,
+    heading: "Welcome to the team",
+    content: `<p style="color:#5f6673;font-size:14px;line-height:1.7">Hi ${escapeHtml(firstName || "there")}, you've been added to <strong>${escapeHtml(teamName)}</strong> as a <strong>${escapeHtml(role.toLowerCase().replaceAll("_", " "))}</strong>.</p>
+      ${button(teamUrl, "Open teams")}`,
+  }),
+  text: `Hi ${firstName || "there"}, you've been added to ${teamName} as a ${role.toLowerCase()}. Open teams: ${teamUrl}`,
+});
+
 module.exports = {
   verificationOtpEmail,
   welcomeEmail,
   organizationInvitationEmail,
   passwordResetEmail,
   issueNotificationEmail,
+  projectAccessEmail,
+  teamAddedEmail,
 };
