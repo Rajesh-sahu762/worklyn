@@ -1,5 +1,8 @@
 const Notification = require("../models/Notification");
 const User = require("../models/user");
+const Issue = require("../models/Issue");
+const Project = require("../models/Project");
+const { sendIssueNotificationEmail } = require("./email.service");
 
 const createNotifications = async (items = []) => {
   const candidates = items.filter((item) =>
@@ -10,7 +13,7 @@ const createNotifications = async (items = []) => {
   try {
     const recipientIds = [...new Set(candidates.map((item) => String(item.recipientId)))];
     const users = await User.find({ _id: { $in: recipientIds } })
-      .select("preferences")
+      .select("preferences email firstName lastName")
       .lean();
     const preferenceByUser = new Map(
       users.map((user) => [String(user._id), user.preferences?.notifications ?? {}])
@@ -29,6 +32,42 @@ const createNotifications = async (items = []) => {
       type: item.type,
       message: item.message,
     })), { ordered: false });
+
+    const emailItems = valid.filter((item) =>
+      ["ISSUE_ASSIGNED", "ISSUE_COMMENTED"].includes(item.type)
+    );
+    if (emailItems.length) {
+      const [issues, projects, actors] = await Promise.all([
+        Issue.find({ _id: { $in: emailItems.map((item) => item.issueId) } })
+          .select("issueKey title project").lean(),
+        Project.find({ _id: { $in: emailItems.map((item) => item.projectId) } })
+          .select("name").lean(),
+        User.find({ _id: { $in: emailItems.map((item) => item.actorId).filter(Boolean) } })
+          .select("firstName lastName").lean(),
+      ]);
+      const issueById = new Map(issues.map((issue) => [String(issue._id), issue]));
+      const projectById = new Map(projects.map((project) => [String(project._id), project]));
+      const actorById = new Map(actors.map((actor) => [String(actor._id), actor]));
+      const userById = new Map(users.map((user) => [String(user._id), user]));
+      await Promise.allSettled(emailItems.map((item) => {
+        const recipient = userById.get(String(item.recipientId));
+        const issue = issueById.get(String(item.issueId));
+        const project = projectById.get(String(item.projectId));
+        const actor = actorById.get(String(item.actorId));
+        if (!recipient?.email || !issue) return Promise.resolve();
+        return sendIssueNotificationEmail({
+          to: recipient.email,
+          firstName: recipient.firstName,
+          actorName: actor ? `${actor.firstName} ${actor.lastName}`.trim() : "A teammate",
+          issueKey: issue.issueKey,
+          issueTitle: issue.title,
+          projectName: project?.name || "your project",
+          type: item.type,
+          projectId: item.projectId,
+          issueId: item.issueId,
+        });
+      }));
+    }
   } catch (error) {
     // Notifications are best-effort side effects; never fail issue/comment writes.
     console.error("Notification creation failed:", error.message);
