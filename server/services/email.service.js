@@ -92,14 +92,14 @@ const sendPasswordResetEmail = async ({ to, firstName, token }) => {
 };
 
 const sendIssueNotificationEmail = async ({
-  to, firstName, actorName, issueKey, issueTitle, projectName, type, projectId, issueId,
+  to, firstName, actorName, issueKey, issueTitle, projectName, type, status, projectId, issueId,
 }) => {
   const issueUrl = buildFrontendUrl(`/projects/${encodeURIComponent(projectId)}/issues/${encodeURIComponent(issueId)}`);
   if (!issueUrl) return { sent: false, reason: "FRONTEND_URL_NOT_CONFIGURED" };
   return sendEmail({
     to,
     ...templates.issueNotificationEmail({
-      firstName, actorName, issueKey, issueTitle, projectName, type, issueUrl,
+      firstName, actorName, issueKey, issueTitle, projectName, type, status, issueUrl,
     }),
   });
 };
