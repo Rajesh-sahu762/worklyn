@@ -150,7 +150,7 @@ export default function Navbar({ onOpenMenu, onOpenSearch }) {
         {/* Notifications */}
         <NavPopover
           icon={BellIcon}
-          label="Notifications"
+          label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
           title="Notifications"
           badgeCount={unreadCount}
         >
