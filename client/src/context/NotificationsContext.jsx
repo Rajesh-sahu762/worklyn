@@ -64,7 +64,14 @@ export function NotificationsProvider({ children }) {
       const result = await getNotifications(1, 20);
       const resultIds = new Set(result.notifications.map((item) => String(idOf(item))));
       const liveDuringRequest = eventsSinceSync.current.slice(eventOffset)
-        .filter((item) => !resultIds.has(String(idOf(item))) && !item.readAt);
+        .filter((item) => (
+          !resultIds.has(String(idOf(item))) &&
+          !item.readAt &&
+          !readIds.current.has(String(idOf(item)))
+        ));
+      const readAfterSnapshot = result.notifications.filter((item) =>
+        !item.readAt && readIds.current.has(String(idOf(item)))
+      ).length;
 
       setItems((current) => {
         const merged = [
@@ -75,12 +82,14 @@ export function NotificationsProvider({ children }) {
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
           .slice(0, 50);
       });
-      setUnreadCount(result.unreadCount + liveDuringRequest.length);
-      setPagination(result.pagination ?? EMPTY_PAGINATION);
+      setUnreadCount(Math.max(0, result.unreadCount - readAfterSnapshot) + liveDuringRequest.length);
+      setPagination({
+        ...(result.pagination ?? EMPTY_PAGINATION),
+        total: (result.pagination?.total ?? result.notifications.length) + liveDuringRequest.length,
+      });
       setNotificationError("");
 
-      // Events already represented by the REST snapshot are counted by the API.
-      // Retain only events created during this request but absent from its snapshot.
+      // Events represented by the REST snapshot are counted by its unread total.
       eventsSinceSync.current = liveDuringRequest;
       result.notifications.forEach((item) => receivedIds.current.add(String(idOf(item))));
       return result;
