@@ -46,7 +46,7 @@ export default function NotificationsPage() {
       setError(err.message || "Couldn't load notifications.");
       setStatus("error");
     }
-  }, []);
+  }, [setUnreadCount]);
 
   useEffect(() => {
     let active = true;
@@ -56,12 +56,10 @@ export default function NotificationsPage() {
 
   // A notification received over Socket.IO appears immediately in the inbox.
   useEffect(() => {
-    if (!latestNotification?._id) return;
-    setItems((current) => current.some((item) => idOf(item) === idOf(latestNotification))
-      ? current
-      : [latestNotification, ...current]);
+    if (!latestNotification?._id || items.some((item) => idOf(item) === idOf(latestNotification))) return;
+    setItems((current) => [latestNotification, ...current]);
     setPagination((current) => ({ ...current, total: current.total + 1 }));
-  }, [latestNotification]);
+  }, [latestNotification, items]);
 
   async function markRead(notification) {
     const id = idOf(notification);
