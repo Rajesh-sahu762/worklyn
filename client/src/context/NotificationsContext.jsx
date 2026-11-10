@@ -46,15 +46,6 @@ export function NotificationsProvider({ children }) {
     setUnreadCount((count) => Math.max(0, count - 1));
   }, []);
 
-  const markAllLocalRead = useCallback(() => {
-    const readAt = new Date().toISOString();
-    setItems((current) => {
-      current.forEach((item) => readIds.current.add(String(idOf(item))));
-      return current.map((item) => ({ ...item, readAt: item.readAt ?? readAt }));
-    });
-    setUnreadCount(0);
-  }, []);
-
   const refreshNotifications = useCallback(async () => {
     const eventOffset = eventsSinceSync.current.length;
     const result = await getNotifications(1, 20);
@@ -73,11 +64,9 @@ export function NotificationsProvider({ children }) {
     });
     setUnreadCount(result.unreadCount + liveDuringRequest.length);
 
-    // Events already represented by the REST snapshot must not be counted again
-    // during the next sync. Keep only events not represented in this response.
-    eventsSinceSync.current = eventsSinceSync.current.filter(
-      (item) => !resultIds.has(String(idOf(item)))
-    );
+    // The REST unread count includes events that existed before this request.
+    // Retain only events created during the request but absent from its snapshot.
+    eventsSinceSync.current = liveDuringRequest;
     result.notifications.forEach((item) => receivedIds.current.add(String(idOf(item))));
     return result;
   }, []);
@@ -131,7 +120,6 @@ export function NotificationsProvider({ children }) {
     latestNotification,
     addNotification,
     syncRead,
-    markAllLocalRead,
     refreshNotifications,
   }), [
     items,
@@ -139,7 +127,6 @@ export function NotificationsProvider({ children }) {
     latestNotification,
     addNotification,
     syncRead,
-    markAllLocalRead,
     refreshNotifications,
   ]);
 
