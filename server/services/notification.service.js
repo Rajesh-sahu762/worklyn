@@ -1,6 +1,11 @@
 const Notification = require("../models/Notification");
 const User = require("../models/user");
 
+let notificationIo = null;
+const setNotificationIo = (io) => {
+  notificationIo = io;
+};
+
 const createNotifications = async (items = []) => {
   const candidates = items.filter((item) =>
     item.recipientId && String(item.recipientId) !== String(item.actorId)
@@ -20,7 +25,8 @@ const createNotifications = async (items = []) => {
     );
     if (!valid.length) return;
 
-    await Notification.insertMany(valid.map((item) => ({
+    // Persist first so live clients never receive a notification missing from the inbox.
+    const created = await Notification.insertMany(valid.map((item) => ({
       recipient: item.recipientId,
       actor: item.actorId || null,
       organization: item.organizationId,
@@ -29,6 +35,20 @@ const createNotifications = async (items = []) => {
       type: item.type,
       message: item.message,
     })), { ordered: false });
+
+    if (notificationIo && created.length) {
+      const populated = await Notification.populate(created, [
+        { path: "actor", select: "firstName lastName profileImage" },
+        { path: "project", select: "name key" },
+        { path: "issue", select: "title issueKey status" },
+      ]);
+
+      for (const notification of populated) {
+        notificationIo
+          .to(`user:${String(notification.recipient)}`)
+          .emit("notification:new", notification);
+      }
+    }
   } catch (error) {
     // Notifications are best-effort side effects; never fail issue/comment writes.
     console.error("Notification creation failed:", error.message);
@@ -89,6 +109,7 @@ const markAllNotificationsRead = async (userId) => {
 };
 
 module.exports = {
+  setNotificationIo,
   createNotifications,
   listNotifications,
   getUnreadNotificationCount,
