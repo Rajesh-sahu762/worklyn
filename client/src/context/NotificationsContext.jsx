@@ -9,6 +9,14 @@ const API_ORIGIN =
   import.meta.env.VITE_API_URL ||
   `${window.location.protocol}//${window.location.hostname}:5000`;
 
+const EMPTY_PAGINATION = {
+  page: 1,
+  limit: 20,
+  total: 0,
+  totalPages: 1,
+  hasNextPage: false,
+  hasPrevPage: false,
+};
 const idOf = (notification) => notification?._id ?? notification?.id;
 
 export function NotificationsProvider({ children }) {
@@ -16,6 +24,9 @@ export function NotificationsProvider({ children }) {
   const [items, setItems] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [latestNotification, setLatestNotification] = useState(null);
+  const [pagination, setPagination] = useState(EMPTY_PAGINATION);
+  const [initialized, setInitialized] = useState(false);
+  const [notificationError, setNotificationError] = useState("");
   const receivedIds = useRef(new Set());
   const eventsSinceSync = useRef([]);
   const readIds = useRef(new Set());
@@ -32,6 +43,7 @@ export function NotificationsProvider({ children }) {
     ].slice(0, 50));
     setLatestNotification(notification);
     setUnreadCount((count) => count + 1);
+    setPagination((current) => ({ ...current, total: current.total + 1 }));
   }, []);
 
   const syncRead = useCallback((notificationId) => {
@@ -48,27 +60,34 @@ export function NotificationsProvider({ children }) {
 
   const refreshNotifications = useCallback(async () => {
     const eventOffset = eventsSinceSync.current.length;
-    const result = await getNotifications(1, 20);
-    const resultIds = new Set(result.notifications.map((item) => String(idOf(item))));
-    const liveDuringRequest = eventsSinceSync.current.slice(eventOffset)
-      .filter((item) => !resultIds.has(String(idOf(item))) && !item.readAt);
+    try {
+      const result = await getNotifications(1, 20);
+      const resultIds = new Set(result.notifications.map((item) => String(idOf(item))));
+      const liveDuringRequest = eventsSinceSync.current.slice(eventOffset)
+        .filter((item) => !resultIds.has(String(idOf(item))) && !item.readAt);
 
-    setItems((current) => {
-      const merged = [
-        ...current.filter((item) => !resultIds.has(String(idOf(item)))),
-        ...result.notifications,
-      ];
-      return merged
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 50);
-    });
-    setUnreadCount(result.unreadCount + liveDuringRequest.length);
+      setItems((current) => {
+        const merged = [
+          ...current.filter((item) => !resultIds.has(String(idOf(item)))),
+          ...result.notifications,
+        ];
+        return merged
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+          .slice(0, 50);
+      });
+      setUnreadCount(result.unreadCount + liveDuringRequest.length);
+      setPagination(result.pagination ?? EMPTY_PAGINATION);
+      setNotificationError("");
 
-    // The REST unread count includes events that existed before this request.
-    // Retain only events created during the request but absent from its snapshot.
-    eventsSinceSync.current = liveDuringRequest;
-    result.notifications.forEach((item) => receivedIds.current.add(String(idOf(item))));
-    return result;
+      // Events already represented by the REST snapshot are counted by the API.
+      // Retain only events created during this request but absent from its snapshot.
+      eventsSinceSync.current = liveDuringRequest;
+      result.notifications.forEach((item) => receivedIds.current.add(String(idOf(item))));
+      return result;
+    } catch (error) {
+      setNotificationError(error.message || "Couldn't load notifications.");
+      throw error;
+    }
   }, []);
 
   useEffect(() => {
@@ -80,10 +99,16 @@ export function NotificationsProvider({ children }) {
       setItems([]);
       setUnreadCount(0);
       setLatestNotification(null);
+      setPagination(EMPTY_PAGINATION);
+      setNotificationError("");
+      setInitialized(status !== "loading");
       return undefined;
     }
 
     let active = true;
+    setInitialized(false);
+    setNotificationError("");
+
     const socket = io(API_ORIGIN, {
       auth: { token: accessToken },
       transports: ["websocket", "polling"],
@@ -103,7 +128,11 @@ export function NotificationsProvider({ children }) {
       }
     });
 
-    refreshNotifications().catch(() => {});
+    refreshNotifications()
+      .catch(() => {})
+      .finally(() => {
+        if (active) setInitialized(true);
+      });
 
     return () => {
       active = false;
@@ -116,8 +145,11 @@ export function NotificationsProvider({ children }) {
     items,
     setItems,
     unreadCount,
-    setUnreadCount,
     latestNotification,
+    pagination,
+    setPagination,
+    initialized,
+    notificationError,
     addNotification,
     syncRead,
     refreshNotifications,
@@ -125,6 +157,9 @@ export function NotificationsProvider({ children }) {
     items,
     unreadCount,
     latestNotification,
+    pagination,
+    initialized,
+    notificationError,
     addNotification,
     syncRead,
     refreshNotifications,
