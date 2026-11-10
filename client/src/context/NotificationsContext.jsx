@@ -1,5 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { io } from "socket.io-client";
 import { useAuth } from "./AuthContext";
 import { getNotifications } from "../lib/api";
@@ -17,7 +25,13 @@ const EMPTY_PAGINATION = {
   hasNextPage: false,
   hasPrevPage: false,
 };
+
 const idOf = (notification) => notification?._id ?? notification?.id;
+const sortNewestFirst = (items) =>
+  [...items].sort((a, b) => {
+    const dateDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    return dateDiff || String(idOf(b)).localeCompare(String(idOf(a)));
+  });
 
 export function NotificationsProvider({ children }) {
   const { status, accessToken } = useAuth();
@@ -27,71 +41,119 @@ export function NotificationsProvider({ children }) {
   const [pagination, setPagination] = useState(EMPTY_PAGINATION);
   const [initialized, setInitialized] = useState(false);
   const [notificationError, setNotificationError] = useState("");
+
+  // Socket events can arrive while an HTTP snapshot is in flight. Keep their
+  // IDs so REST and Socket.IO never count the same notification twice.
   const receivedIds = useRef(new Set());
-  const eventsSinceSync = useRef([]);
+  const pendingLive = useRef(new Map());
   const readIds = useRef(new Set());
+  const unreadIds = useRef(new Set());
+  const refreshSequence = useRef(0);
 
   const addNotification = useCallback((notification) => {
     const id = idOf(notification);
-    if (!id || receivedIds.current.has(String(id))) return;
+    if (!id) return;
 
-    receivedIds.current.add(String(id));
-    eventsSinceSync.current.push(notification);
-    setItems((current) => [
-      notification,
-      ...current.filter((item) => String(idOf(item)) !== String(id)),
-    ].slice(0, 50));
+    const key = String(id);
+    if (receivedIds.current.has(key)) return;
+
+    receivedIds.current.add(key);
+    pendingLive.current.set(key, notification);
+    if (!notification.readAt && !readIds.current.has(key)) unreadIds.current.add(key);
+
+    setItems((current) =>
+      sortNewestFirst([
+        notification,
+        ...current.filter((item) => String(idOf(item)) !== key),
+      ]).slice(0, 50),
+    );
     setLatestNotification(notification);
-    setUnreadCount((count) => count + 1);
+    setUnreadCount((count) => count + (unreadIds.current.has(key) ? 1 : 0));
     setPagination((current) => ({ ...current, total: current.total + 1 }));
   }, []);
 
   const syncRead = useCallback((notificationId) => {
-    const id = String(notificationId);
-    if (readIds.current.has(id)) return;
-    readIds.current.add(id);
-    setItems((current) => current.map((item) =>
-      String(idOf(item)) === id
-        ? { ...item, readAt: item.readAt ?? new Date().toISOString() }
-        : item
-    ));
-    setUnreadCount((count) => Math.max(0, count - 1));
+    const key = String(notificationId);
+    if (readIds.current.has(key)) return;
+
+    readIds.current.add(key);
+    pendingLive.current.delete(key);
+    const wasUnread = unreadIds.current.delete(key);
+
+    setItems((current) =>
+      current.map((item) =>
+        String(idOf(item)) === key
+          ? { ...item, readAt: item.readAt ?? new Date().toISOString() }
+          : item,
+      ),
+    );
+    if (wasUnread) setUnreadCount((count) => Math.max(0, count - 1));
   }, []);
 
   const refreshNotifications = useCallback(async () => {
-    const eventOffset = eventsSinceSync.current.length;
+    const sequence = ++refreshSequence.current;
     try {
       const result = await getNotifications(1, 20);
-      const resultIds = new Set(result.notifications.map((item) => String(idOf(item))));
-      const liveDuringRequest = eventsSinceSync.current.slice(eventOffset)
-        .filter((item) => (
-          !resultIds.has(String(idOf(item))) &&
+      const snapshot = result.notifications ?? [];
+      if (sequence !== refreshSequence.current) return result;
+
+      const snapshotIds = new Set(snapshot.map((item) => String(idOf(item))));
+      const pendingNotInSnapshot = [...pendingLive.current.entries()]
+        .filter(([id, item]) =>
+          !snapshotIds.has(id) &&
           !item.readAt &&
-          !readIds.current.has(String(idOf(item)))
-        ));
-      const readAfterSnapshot = result.notifications.filter((item) =>
-        !item.readAt && readIds.current.has(String(idOf(item)))
+          !readIds.current.has(id),
+        );
+
+      // The REST unread count includes every notification committed before its
+      // query snapshot. Socket events absent from that snapshot are added once.
+      const snapshotUnread = snapshot.filter(
+        (item) => !item.readAt && !readIds.current.has(String(idOf(item))),
       ).length;
+      const serverUnreadOutsidePage = Math.max(0, result.unreadCount - snapshotUnread);
+      const correctedUnread =
+        serverUnreadOutsidePage +
+        snapshot.filter(
+          (item) => !item.readAt && !readIds.current.has(String(idOf(item))),
+        ).length +
+        pendingNotInSnapshot.length;
 
       setItems((current) => {
-        const merged = [
-          ...current.filter((item) => !resultIds.has(String(idOf(item)))),
-          ...result.notifications,
-        ];
-        return merged
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        const merged = new Map();
+        current.forEach((item) => merged.set(String(idOf(item)), item));
+        snapshot.forEach((item) => merged.set(String(idOf(item)), item));
+        pendingNotInSnapshot.forEach(([id, item]) => merged.set(id, item));
+
+        return sortNewestFirst([...merged.values()])
+          .map((item) =>
+            readIds.current.has(String(idOf(item))) && !item.readAt
+              ? { ...item, readAt: new Date().toISOString() }
+              : item,
+          )
           .slice(0, 50);
       });
-      setUnreadCount(Math.max(0, result.unreadCount - readAfterSnapshot) + liveDuringRequest.length);
+
+      // Drop events represented in the server snapshot; retain events that
+      // arrived after it or are not yet visible in the first page.
+      for (const item of snapshot) {
+        const key = String(idOf(item));
+        receivedIds.current.add(key);
+        pendingLive.current.delete(key);
+        if (item.readAt || readIds.current.has(key)) unreadIds.current.delete(key);
+        else unreadIds.current.add(key);
+      }
+      pendingNotInSnapshot.forEach(([id]) => {
+        if (!readIds.current.has(id)) unreadIds.current.add(id);
+      });
+
+      setUnreadCount(correctedUnread);
       setPagination({
         ...(result.pagination ?? EMPTY_PAGINATION),
-        total: (result.pagination?.total ?? result.notifications.length) + liveDuringRequest.length,
+        total:
+          (result.pagination?.total ?? snapshot.length) +
+          pendingNotInSnapshot.length,
       });
       setNotificationError("");
-
-      // Events represented by the REST snapshot are counted by its unread total.
-      eventsSinceSync.current = liveDuringRequest;
-      result.notifications.forEach((item) => receivedIds.current.add(String(idOf(item))));
       return result;
     } catch (error) {
       setNotificationError(error.message || "Couldn't load notifications.");
@@ -101,8 +163,10 @@ export function NotificationsProvider({ children }) {
 
   useEffect(() => {
     receivedIds.current.clear();
-    eventsSinceSync.current = [];
+    pendingLive.current.clear();
     readIds.current.clear();
+    unreadIds.current.clear();
+    refreshSequence.current += 1;
 
     if (status !== "authenticated" || !accessToken) {
       setItems([]);
@@ -115,6 +179,7 @@ export function NotificationsProvider({ children }) {
     }
 
     let active = true;
+    let refreshOnConnect = false;
     setInitialized(false);
     setNotificationError("");
 
@@ -127,6 +192,22 @@ export function NotificationsProvider({ children }) {
       reconnectionDelayMax: 10000,
     });
 
+    const hydrate = () => {
+      if (!active) return;
+      refreshNotifications()
+        .catch(() => {})
+        .finally(() => {
+          if (active) setInitialized(true);
+        });
+    };
+
+    socket.on("connect", () => {
+      // A reconnect can happen after notifications were created while this
+      // client was offline. Reconcile from the persisted inbox.
+      if (refreshOnConnect) hydrate();
+      refreshOnConnect = true;
+    });
+
     socket.on("notification:new", (notification) => {
       if (active) addNotification(notification);
     });
@@ -137,11 +218,7 @@ export function NotificationsProvider({ children }) {
       }
     });
 
-    refreshNotifications()
-      .catch(() => {})
-      .finally(() => {
-        if (active) setInitialized(true);
-      });
+    hydrate();
 
     return () => {
       active = false;
@@ -150,29 +227,32 @@ export function NotificationsProvider({ children }) {
     };
   }, [status, accessToken, addNotification, refreshNotifications]);
 
-  const value = useMemo(() => ({
-    items,
-    setItems,
-    unreadCount,
-    latestNotification,
-    pagination,
-    setPagination,
-    initialized,
-    notificationError,
-    addNotification,
-    syncRead,
-    refreshNotifications,
-  }), [
-    items,
-    unreadCount,
-    latestNotification,
-    pagination,
-    initialized,
-    notificationError,
-    addNotification,
-    syncRead,
-    refreshNotifications,
-  ]);
+  const value = useMemo(
+    () => ({
+      items,
+      setItems,
+      unreadCount,
+      latestNotification,
+      pagination,
+      setPagination,
+      initialized,
+      notificationError,
+      addNotification,
+      syncRead,
+      refreshNotifications,
+    }),
+    [
+      items,
+      unreadCount,
+      latestNotification,
+      pagination,
+      initialized,
+      notificationError,
+      addNotification,
+      syncRead,
+      refreshNotifications,
+    ],
+  );
 
   return (
     <NotificationsContext.Provider value={value}>
