@@ -25,39 +25,53 @@ function NotificationIcon({ type }) {
 }
 
 export default function NotificationsPage() {
-  const { items, setItems, unreadCount, syncRead, refreshNotifications } = useNotifications();
-  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1, hasNextPage: false });
+  const {
+    items,
+    setItems,
+    unreadCount,
+    syncRead,
+    refreshNotifications,
+    pagination,
+    setPagination,
+    initialized,
+    notificationError,
+  } = useNotifications();
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState(null);
   const [markingAll, setMarkingAll] = useState(false);
 
+  useEffect(() => {
+    if (!initialized) {
+      setStatus("loading");
+      return;
+    }
+    setStatus(notificationError ? "error" : "ready");
+    setError(notificationError);
+  }, [initialized, notificationError]);
+
   const load = useCallback(async (page = 1, append = false) => {
     setStatus("loading");
     setError("");
     try {
-      const result = page === 1 ? await refreshNotifications() : await getNotifications(page, 20);
-      if (append) {
-        setItems((current) => {
-          const seen = new Set(current.map((item) => String(idOf(item))));
-          return [...current, ...result.notifications.filter((item) => !seen.has(String(idOf(item))))];
-        });
+      if (page === 1) {
+        await refreshNotifications();
+      } else {
+        const result = await getNotifications(page, 20);
+        if (append) {
+          setItems((current) => {
+            const seen = new Set(current.map((item) => String(idOf(item))));
+            return [...current, ...result.notifications.filter((item) => !seen.has(String(idOf(item))))];
+          });
+        }
+        setPagination(result.pagination ?? pagination);
       }
-      setPagination(result.pagination ?? {
-        page,
-        limit: 20,
-        total: result.notifications.length,
-        totalPages: 1,
-        hasNextPage: false,
-      });
       setStatus("ready");
     } catch (err) {
       setError(err.message || "Couldn't load notifications.");
       setStatus("error");
     }
-  }, [refreshNotifications, setItems]);
-
-  useEffect(() => { load(); }, [load]);
+  }, [pagination, refreshNotifications, setItems, setPagination]);
 
   async function markRead(notification) {
     const id = idOf(notification);
