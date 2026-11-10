@@ -1,15 +1,22 @@
-require('dotenv').config();
-const app = require('./app');
+require("dotenv").config();
+const http = require("http");
+const app = require("./app");
 const port = process.env.PORT || 5000;
-const connectDB = require('./config/db')
+const connectDB = require("./config/db");
+const { initializeSocket } = require("./socket");
 
-connectDB();
+const startServer = async () => {
+  await connectDB();
 
-app.get('/', (req, res) => {
-  res.send('Hello World!');
+  const httpServer = http.createServer(app);
+  initializeSocket(httpServer);
+
+  httpServer.listen(port, "0.0.0.0", () => {
+    console.log(`Server is running on port ${port}`);
+  });
+};
+
+startServer().catch((error) => {
+  console.error("Server startup failed:", error.message);
+  process.exit(1);
 });
-
-app.listen(port,"0.0.0.0", () => {
-  console.log(`Server is running on port ${port}`);
-});
-
