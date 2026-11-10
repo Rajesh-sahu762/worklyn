@@ -21,7 +21,9 @@ const createNotifications = async (items = []) => {
       users.map((user) => [String(user._id), user.preferences?.notifications ?? {}])
     );
     const valid = candidates.filter(
-      (item) => preferenceByUser.get(String(item.recipientId))?.[item.type] !== false
+      (item) =>
+        preferenceByUser.has(String(item.recipientId)) &&
+        preferenceByUser.get(String(item.recipientId))?.[item.type] !== false
     );
     if (!valid.length) return;
 
@@ -37,16 +39,22 @@ const createNotifications = async (items = []) => {
     })), { ordered: false });
 
     if (notificationIo && created.length) {
-      const populated = await Notification.populate(created, [
-        { path: "actor", select: "firstName lastName profileImage" },
-        { path: "project", select: "name key" },
-        { path: "issue", select: "title issueKey status" },
-      ]);
+      try {
+        const populated = await Notification.populate(created, [
+          { path: "actor", select: "firstName lastName profileImage" },
+          { path: "project", select: "name key" },
+          { path: "issue", select: "title issueKey status" },
+        ]);
 
-      for (const notification of populated) {
-        notificationIo
-          .to(`user:${String(notification.recipient)}`)
-          .emit("notification:new", notification);
+        for (const notification of populated) {
+          notificationIo
+            .to(`user:${String(notification.recipient)}`)
+            .emit("notification:new", notification);
+        }
+      } catch (emitError) {
+        // The database write already succeeded; keep it durable and let the
+        // client's REST hydration recover if population or socket delivery fails.
+        console.error("Notification delivery failed:", emitError.message);
       }
     }
   } catch (error) {
