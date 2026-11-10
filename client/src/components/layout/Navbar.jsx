@@ -6,6 +6,7 @@ import CreateMenu from "./CreateMenu";
 import NavPopover from "./NavPopover";
 import UserMenu from "./UserMenu";
 import { isMac } from "../../lib/platform";
+import { useNotifications } from "../../context/NotificationsContext";
 import {
   BellIcon,
   HelpIcon,
@@ -36,6 +37,7 @@ const focusRing =
 export default function Navbar({ onOpenMenu, onOpenSearch }) {
   const { pathname } = useLocation();
   const { currentOrg } = useOrganization();
+  const { unreadCount } = useNotifications();
 
   const pageTitle =
   TITLES[pathname] ??
@@ -150,6 +152,7 @@ export default function Navbar({ onOpenMenu, onOpenSearch }) {
           icon={BellIcon}
           label="Notifications"
           title="Notifications"
+          badgeCount={unreadCount}
         >
           {FEATURES.notifications ? (
             <div>
