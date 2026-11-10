@@ -4,7 +4,7 @@ const User = require("./models/user");
 
 let io;
 
-const allowedOrigins = (process.env.CLIENT_URLS || "http://localhost:5173,http://10.89.158.1:5173")
+const allowedOrigins = (process.env.CLIENT_URLS || process.env.FRONTEND_URL || "http://localhost:5173,http://10.89.158.1:5173")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
