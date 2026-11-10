@@ -2,14 +2,25 @@ import { useRef, useState } from "react";
 import { Link } from "react-router";
 import useDismiss from "../../lib/useDismiss";
 import { useNotifications } from "../../context/NotificationsContext";
+import { markNotificationRead } from "../../lib/api";
 
 // Icon button + small popover panel (notifications, help, settings).
 export default function NavPopover({ icon: Icon, label, title, children }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useDismiss(ref, open, () => setOpen(false));
-  const { items, unreadCount } = useNotifications();
+  const { items, unreadCount, syncRead } = useNotifications();
   const isNotifications = label === "Notifications";
+
+  const handleNotificationClick = (item) => {
+    setOpen(false);
+    if (item.readAt) return;
+
+    const notificationId = item._id ?? item.id;
+    markNotificationRead(notificationId)
+      .then(() => syncRead(notificationId))
+      .catch(() => {});
+  };
 
   return (
     <div ref={ref} className="relative">
@@ -54,7 +65,7 @@ export default function NavPopover({ icon: Icon, label, title, children }) {
                     <Link
                       key={item._id ?? item.id}
                       to={href}
-                      onClick={() => setOpen(false)}
+                      onClick={() => handleNotificationClick(item)}
                       className={`block rounded-control px-3 py-2.5 text-left transition-colors hover:bg-surface-subtle ${item.readAt ? "" : "bg-accent-support/[0.04]"}`}
                     >
                       <p className="line-clamp-2 text-xs leading-5 text-ink">{item.message}</p>
