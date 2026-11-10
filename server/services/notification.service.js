@@ -3,6 +3,7 @@ const User = require("../models/user");
 const Issue = require("../models/Issue");
 const Project = require("../models/Project");
 const { sendIssueNotificationEmail } = require("./email.service");
+const { getIO } = require("../socket");
 
 const createNotifications = async (items = []) => {
   const candidates = items.filter((item) =>
@@ -23,7 +24,7 @@ const createNotifications = async (items = []) => {
     );
     if (!valid.length) return;
 
-    await Notification.insertMany(valid.map((item) => ({
+    const inserted = await Notification.insertMany(valid.map((item) => ({
       recipient: item.recipientId,
       actor: item.actorId || null,
       organization: item.organizationId,
@@ -32,6 +33,27 @@ const createNotifications = async (items = []) => {
       type: item.type,
       message: item.message,
     })), { ordered: false });
+
+    // Persist first, then publish. MongoDB remains the source of truth.
+    try {
+      const realtimeItems = await Notification.find({
+        _id: { $in: inserted.map((notification) => notification._id) },
+      })
+        .populate("actor", "firstName lastName profileImage")
+        .populate("project", "name key")
+        .populate("issue", "title issueKey status")
+        .lean();
+
+      const socketServer = getIO();
+      if (socketServer) {
+        for (const notification of realtimeItems) {
+          socketServer.to(`user:${notification.recipient}`).emit("notification:new", notification);
+        }
+      }
+    } catch (socketError) {
+      // Socket delivery is best-effort; saved notifications remain available via REST.
+      console.error("Real-time notification delivery failed:", socketError.message);
+    }
 
     const emailItems = valid.filter((item) =>
       ["ISSUE_ASSIGNED", "ISSUE_COMMENTED", "ISSUE_STATUS_CHANGED"].includes(item.type)
