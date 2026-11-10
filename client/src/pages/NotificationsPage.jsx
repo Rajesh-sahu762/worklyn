@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Bell, CheckCheck, CircleDot, MessageSquare, RefreshCw, UserRoundCheck } from "lucide-react";
 import { getNotifications, markAllNotificationsRead, markNotificationRead } from "../lib/api";
+import { useNotifications } from "../context/NotificationsContext";
 
 const idOf = (item) => item?._id ?? item?.id;
 const actorName = (actor) => actor ? [actor.firstName, actor.lastName].filter(Boolean).join(" ") || "A teammate" : "A teammate";
@@ -26,7 +27,7 @@ function NotificationIcon({ type }) {
 export default function NotificationsPage() {
   const [items, setItems] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1, hasNextPage: false });
-  const [unreadCount, setUnreadCount] = useState(0);
+  const { unreadCount, setUnreadCount, latestNotification } = useNotifications();
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState(null);
@@ -52,6 +53,15 @@ export default function NotificationsPage() {
     Promise.resolve().then(() => { if (active) load(); });
     return () => { active = false; };
   }, [load]);
+
+  // A notification received over Socket.IO appears immediately in the inbox.
+  useEffect(() => {
+    if (!latestNotification?._id) return;
+    setItems((current) => current.some((item) => idOf(item) === idOf(latestNotification))
+      ? current
+      : [latestNotification, ...current]);
+    setPagination((current) => ({ ...current, total: current.total + 1 }));
+  }, [latestNotification]);
 
   async function markRead(notification) {
     const id = idOf(notification);
