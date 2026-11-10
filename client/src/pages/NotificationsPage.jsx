@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Bell, CheckCheck, CircleDot, MessageSquare, RefreshCw, UserRoundCheck } from "lucide-react";
 import { getNotifications, markAllNotificationsRead, markNotificationRead } from "../lib/api";
+import { useNotifications } from "../context/NotificationsContext";
 
 const idOf = (item) => item?._id ?? item?.id;
 const actorName = (actor) => actor ? [actor.firstName, actor.lastName].filter(Boolean).join(" ") || "A teammate" : "A teammate";
@@ -24,9 +25,8 @@ function NotificationIcon({ type }) {
 }
 
 export default function NotificationsPage() {
-  const [items, setItems] = useState([]);
+  const { items, setItems, unreadCount, setUnreadCount, syncRead, refreshNotifications } = useNotifications();
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1, hasNextPage: false });
-  const [unreadCount, setUnreadCount] = useState(0);
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState(null);
@@ -36,22 +36,29 @@ export default function NotificationsPage() {
     setStatus("loading");
     setError("");
     try {
-      const result = await getNotifications(page, 20);
-      setItems((current) => append ? [...current, ...result.notifications] : result.notifications);
-      setPagination(result.pagination ?? { page, limit: 20, total: result.notifications.length, totalPages: 1, hasNextPage: false });
-      setUnreadCount(result.unreadCount);
+      const result = page === 1 ? await refreshNotifications() : await getNotifications(page, 20);
+      if (append) {
+        setItems((current) => {
+          const seen = new Set(current.map((item) => String(idOf(item))));
+          return [...current, ...result.notifications.filter((item) => !seen.has(String(idOf(item))))];
+        });
+      }
+      setPagination(result.pagination ?? {
+        page,
+        limit: 20,
+        total: result.notifications.length,
+        totalPages: 1,
+        hasNextPage: false,
+      });
+      if (append) setUnreadCount(result.unreadCount);
       setStatus("ready");
     } catch (err) {
       setError(err.message || "Couldn't load notifications.");
       setStatus("error");
     }
-  }, []);
+  }, [refreshNotifications, setItems, setUnreadCount]);
 
-  useEffect(() => {
-    let active = true;
-    Promise.resolve().then(() => { if (active) load(); });
-    return () => { active = false; };
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   async function markRead(notification) {
     const id = idOf(notification);
@@ -59,11 +66,12 @@ export default function NotificationsPage() {
     setBusyId(id);
     try {
       await markNotificationRead(id);
-      setItems((current) => current.map((item) => idOf(item) === id ? { ...item, readAt: new Date().toISOString() } : item));
-      setUnreadCount((count) => Math.max(0, count - 1));
+      syncRead(id);
     } catch (err) {
       setError(err.message || "Couldn't mark this notification as read.");
-    } finally { setBusyId(null); }
+    } finally {
+      setBusyId(null);
+    }
   }
 
   async function markAllRead() {
@@ -71,15 +79,15 @@ export default function NotificationsPage() {
     setError("");
     try {
       await markAllNotificationsRead();
-      const readAt = new Date().toISOString();
-      setItems((current) => current.map((item) => ({ ...item, readAt: item.readAt ?? readAt })));
-      setUnreadCount(0);
-    } catch (err) { setError(err.message || "Couldn't mark notifications as read."); }
-    finally { setMarkingAll(false); }
+      await refreshNotifications();
+    } catch (err) {
+      setError(err.message || "Couldn't mark notifications as read.");
+    } finally {
+      setMarkingAll(false);
+    }
   }
 
   const hasUnread = unreadCount > 0;
-
   return <div className="mx-auto max-w-4xl space-y-6">
     <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Your activity</p><h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">Notifications</h1><p className="mt-2 text-sm text-ink-muted">{unreadCount} unread {unreadCount === 1 ? "notification" : "notifications"}</p></div><div className="flex gap-2"><button type="button" onClick={() => load(1)} disabled={status === "loading"} aria-label="Refresh notifications" className="grid h-10 w-10 place-items-center rounded-control border border-line bg-surface text-ink-muted hover:bg-surface-subtle disabled:opacity-50"><RefreshCw size={15} className={status === "loading" ? "animate-spin" : ""} /></button><button type="button" onClick={markAllRead} disabled={!hasUnread || markingAll} className="inline-flex h-10 items-center justify-center gap-2 rounded-control border border-line bg-surface px-3 text-xs font-semibold text-ink hover:bg-surface-subtle disabled:opacity-50"><CheckCheck size={15} />{markingAll ? "Updating…" : "Mark all read"}</button></div></header>
     {error && <p role="alert" className="rounded-control border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">{error}</p>}
