@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { useAuth } from "./AuthContext";
 import { getUnreadNotificationCount } from "../lib/api";
@@ -30,12 +30,12 @@ export function NotificationsProvider({ children }) {
     });
 
     getUnreadNotificationCount().then((count) => {
-      if (active) setUnreadCount(count);
+      if (active && !receivedSocketEvent.current) setUnreadCount(count);
     }).catch(() => {});
 
     socket.on("notification:new", (notification) => {
       if (!active || !notification?._id) return;
-      setLatestNotification(notification);
+      receivedSocketEvent.current = true;\n      setLatestNotification(notification);
       setUnreadCount((count) => count + 1);
     });
 
