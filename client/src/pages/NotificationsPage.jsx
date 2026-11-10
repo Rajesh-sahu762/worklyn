@@ -25,7 +25,7 @@ function NotificationIcon({ type }) {
 }
 
 export default function NotificationsPage() {
-  const { items, setItems, unreadCount, setUnreadCount, syncRead, refreshNotifications } = useNotifications();
+  const { items, setItems, unreadCount, syncRead, refreshNotifications } = useNotifications();
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1, hasNextPage: false });
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
@@ -50,13 +50,12 @@ export default function NotificationsPage() {
         totalPages: 1,
         hasNextPage: false,
       });
-      if (append) setUnreadCount(result.unreadCount);
       setStatus("ready");
     } catch (err) {
       setError(err.message || "Couldn't load notifications.");
       setStatus("error");
     }
-  }, [refreshNotifications, setItems, setUnreadCount]);
+  }, [refreshNotifications, setItems]);
 
   useEffect(() => { load(); }, [load]);
 
