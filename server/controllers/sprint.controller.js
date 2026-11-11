@@ -88,7 +88,7 @@ const startSprintController = async (req, res) => {
 
 const completeSprintController = async (req, res) => {
   try {
-    const sprint = await completeSprint({ projectId: req.project._id, sprintId: req.params.sprintId });
+    const sprint = await completeSprint({ projectId: req.project._id, sprintId: req.params.sprintId, userId: req.user._id });
     return res.status(200).json({ success: true, data: { sprint } });
   } catch (error) { return fail(res, error); }
 };
