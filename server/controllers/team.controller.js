@@ -110,6 +110,7 @@ const addTeamMemberController = async (req, res) => {
       organizationId: req.params.organizationId,
       teamId: req.team._id,
       userId,
+      actorId: req.user._id,
       role,
     });
     return res.status(201).json({ success: true, message: "Team member added successfully", data: { member } });

@@ -2,6 +2,7 @@ const OrganizationInvitation = require("../models/OrganizationInvitation");
 const OrganizationMember = require("../models/OrganizationMember");
 const User = require("../models/User");
 const Organization = require("../models/Organization");
+const { createNotifications } = require("./notification.service");
 
 const generateInviteToken = require("../utils/generateInviteToken");
 
@@ -74,6 +75,18 @@ const createOrganizationInvitation = async ({
     status: "PENDING",
     expiresAt,
   });
+
+  // Notify an existing Worklyn account immediately; new users will see the
+  // invitation after registering with the invited email address.
+  if (user) {
+    await createNotifications([{
+      recipientId: user._id,
+      actorId: invitedBy,
+      organizationId,
+      type: "ORGANIZATION_INVITATION",
+      message: `You were invited to join ${organization.name}`,
+    }]);
+  }
 
   // Temporary development link
   const invitationLink = `${process.env.FRONTEND_URL}/accept-invitation?token=${inviteToken}`;
@@ -164,6 +177,14 @@ const acceptOrganizationInvitation = async ({ token, userId }) => {
   invitation.acceptedAt = new Date();
 
   await invitation.save();
+
+  await createNotifications([{
+    recipientId: invitation.invitedBy,
+    actorId: user._id,
+    organizationId: invitation.organization._id,
+    type: "INVITATION_ACCEPTED",
+    message: `${user.firstName || user.email} accepted your invitation to ${invitation.organization.name}`,
+  }]);
 
   return {
     organization: invitation.organization,
@@ -269,6 +290,20 @@ const resendOrganizationInvitation = async ({
   invitation.expiresAt = expiresAt;
 
   await invitation.save();
+
+  const [organization, invitedUser] = await Promise.all([
+    Organization.findById(organizationId).select("name").lean(),
+    User.findOne({ email: invitation.email, isDeleted: false }).select("_id").lean(),
+  ]);
+  if (invitedUser) {
+    await createNotifications([{
+      recipientId: invitedUser._id,
+      actorId: invitation.invitedBy,
+      organizationId,
+      type: "ORGANIZATION_INVITATION",
+      message: `You were invited to join ${organization?.name || "an organization"}`,
+    }]);
+  }
 
   const invitationLink =
     `${process.env.FRONTEND_URL}/accept-invitation?token=${inviteToken}`;

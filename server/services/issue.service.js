@@ -81,6 +81,30 @@ const createIssue = async ({
     projectId: issue.project, issueId: issue._id, type: "ISSUE_ASSIGNED",
     message: `${issue.issueKey} was assigned to ${assigneeId ? "you" : "your team"}`,
   })));
+
+  if (issue.status === "BACKLOG") {
+    const projectAdmins = await ProjectMember.find({
+      project: projectId,
+      role: "PROJECT_ADMIN",
+      status: "ACTIVE",
+    }).select("user").lean();
+    const backlogRecipients = [...new Set([
+      reporterId,
+      assigneeId,
+      ...teamRecipients,
+      ...projectAdmins.map(member => member.user),
+    ].filter(Boolean).map(String))];
+
+    await createNotifications(backlogRecipients.map(recipientId => ({
+      recipientId,
+      actorId: reporterId,
+      organizationId: issue.organization,
+      projectId: issue.project,
+      issueId: issue._id,
+      type: "ISSUE_BACKLOG_UPDATED",
+      message: `${issue.issueKey} was added to the backlog`,
+    })));
+  }
   return Issue.findById(issue._id)
     .populate("reporter", "firstName lastName email profileImage")
     .populate("assignee", "firstName lastName email profileImage")
@@ -455,8 +479,10 @@ const updateIssue = async ({
         organizationId: issue.organization,
         projectId: issue.project,
         issueId: issue._id,
-        type: "ISSUE_STATUS_CHANGED",
-        message: `${issue.issueKey} moved to ${issue.status.replaceAll("_", " ").toLowerCase()}`,
+        type: issue.status === "BACKLOG" ? "ISSUE_BACKLOG_UPDATED" : "ISSUE_STATUS_CHANGED",
+        message: issue.status === "BACKLOG"
+          ? `${issue.issueKey} was moved to the backlog`
+          : `${issue.issueKey} moved to ${issue.status.replaceAll("_", " ").toLowerCase()}`,
       });
     }
   }
@@ -481,6 +507,31 @@ const updateIssue = async ({
       message: `You were assigned ${issue.issueKey}`,
     });
   }
+  if (changes.some(change => change.field === "status") && issue.status === "BACKLOG") {
+    const projectAdmins = await ProjectMember.find({
+      project: projectId,
+      role: "PROJECT_ADMIN",
+      status: "ACTIVE",
+    }).select("user").lean();
+    const alreadyNotified = new Set(notifications
+      .filter(item => item.type === "ISSUE_BACKLOG_UPDATED")
+      .map(item => String(item.recipientId)));
+
+    projectAdmins.forEach(({ user: recipientId }) => {
+      if (!alreadyNotified.has(String(recipientId))) {
+        notifications.push({
+          recipientId,
+          actorId: userId,
+          organizationId: issue.organization,
+          projectId: issue.project,
+          issueId: issue._id,
+          type: "ISSUE_BACKLOG_UPDATED",
+          message: `${issue.issueKey} was moved to the backlog`,
+        });
+      }
+    });
+  }
+
   await createNotifications(notifications);
 
   // 9. Return populated issue

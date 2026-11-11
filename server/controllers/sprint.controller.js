@@ -74,21 +74,21 @@ const updateSprintController = async (req, res) => {
   const end = req.body.endDate ?? null;
   if (start && end && new Date(end) <= new Date(start)) return res.status(400).json({ success: false, message: "Sprint end date must be after its start date" });
   try {
-    const sprint = await updateSprint({ projectId: req.project._id, sprintId: req.params.sprintId, updates: req.body });
+    const sprint = await updateSprint({ projectId: req.project._id, sprintId: req.params.sprintId, userId: req.user._id, updates: req.body });
     return res.status(200).json({ success: true, data: { sprint } });
   } catch (error) { return fail(res, error); }
 };
 
 const startSprintController = async (req, res) => {
   try {
-    const sprint = await startSprint({ projectId: req.project._id, sprintId: req.params.sprintId });
+    const sprint = await startSprint({ projectId: req.project._id, sprintId: req.params.sprintId, userId: req.user._id });
     return res.status(200).json({ success: true, data: { sprint } });
   } catch (error) { return fail(res, error); }
 };
 
 const completeSprintController = async (req, res) => {
   try {
-    const sprint = await completeSprint({ projectId: req.project._id, sprintId: req.params.sprintId });
+    const sprint = await completeSprint({ projectId: req.project._id, sprintId: req.params.sprintId, userId: req.user._id });
     return res.status(200).json({ success: true, data: { sprint } });
   } catch (error) { return fail(res, error); }
 };
@@ -99,7 +99,7 @@ const assignIssueToSprintController = async (req, res) => {
     return res.status(400).json({ success: false, message: "Invalid sprint ID" });
   }
   try {
-    const issue = await assignIssueToSprint({ projectId: req.project._id, issueId: req.params.issueId, sprintId });
+    const issue = await assignIssueToSprint({ projectId: req.project._id, issueId: req.params.issueId, sprintId, userId: req.user._id });
     return res.status(200).json({ success: true, data: { issue } });
   } catch (error) { return fail(res, error); }
 };

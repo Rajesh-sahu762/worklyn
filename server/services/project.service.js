@@ -3,6 +3,7 @@ const ProjectMember = require("../models/ProjectMember");
 const OrganizationMember = require("../models/OrganizationMember");
 const Team = require("../models/Team");
 const TeamMember = require("../models/TeamMember");
+const { createNotifications } = require("./notification.service");
 const createProject = async ({
   organizationId, name, key, slug, description, projectType, lead, teamIds = [], createdBy,
 }) => {
@@ -56,6 +57,18 @@ const createProject = async ({
     }));
 
     await ProjectMember.insertMany(projectMembers);
+
+    await createNotifications(projectMembers
+      .filter(member => String(member.user) !== String(createdBy))
+      .map(member => ({
+        recipientId: member.user,
+        actorId: createdBy,
+        organizationId,
+        projectId: createdProject._id,
+        type: "PROJECT_CREATED",
+        message: `You were added to the ${createdProject.name} project`,
+      })));
+
     return createdProject;
   } catch (error) {
     // Compensating cleanup keeps failed creates from leaving an orphan project.
@@ -133,7 +146,7 @@ const getProjectMembers = async (projectId) => {
     .lean();
 };
 
-const addProjectMember = async ({ projectId, userId, role }) => {
+const addProjectMember = async ({ projectId, userId, role, actorId }) => {
   const project = await Project.findOne({
     _id: projectId,
     status: "ACTIVE",
@@ -173,6 +186,14 @@ const addProjectMember = async ({ projectId, userId, role }) => {
     membership.joinedAt = new Date();
 
     await membership.save();
+    await createNotifications([{
+      recipientId: userId,
+      actorId,
+      organizationId: project.organization,
+      projectId: project._id,
+      type: "PROJECT_MEMBER_ADDED",
+      message: `You were added to the ${project.name} project`,
+    }]);
     return membership;
   }
 
@@ -184,6 +205,15 @@ const addProjectMember = async ({ projectId, userId, role }) => {
     invitedBy: null,
     joinedAt: new Date(),
   });
+
+  await createNotifications([{
+    recipientId: userId,
+    actorId,
+    organizationId: project.organization,
+    projectId: project._id,
+    type: "PROJECT_MEMBER_ADDED",
+    message: `You were added to the ${project.name} project`,
+  }]);
 
   return membership;
 };
