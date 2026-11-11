@@ -291,6 +291,20 @@ const resendOrganizationInvitation = async ({
 
   await invitation.save();
 
+  const [organization, invitedUser] = await Promise.all([
+    Organization.findById(organizationId).select("name").lean(),
+    User.findOne({ email: invitation.email, isDeleted: false }).select("_id").lean(),
+  ]);
+  if (invitedUser) {
+    await createNotifications([{
+      recipientId: invitedUser._id,
+      actorId: invitation.invitedBy,
+      organizationId,
+      type: "ORGANIZATION_INVITATION",
+      message: `You were invited to join ${organization?.name || "an organization"}`,
+    }]);
+  }
+
   const invitationLink =
     `${process.env.FRONTEND_URL}/accept-invitation?token=${inviteToken}`;
 
