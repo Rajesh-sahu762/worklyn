@@ -1,6 +1,7 @@
 const Team = require("../models/Team");
 const TeamMember = require("../models/TeamMember");
 const OrganizationMember = require("../models/OrganizationMember");
+const { createNotifications } = require("./notification.service");
 
 const getTeamById = async (teamId) => {
   const team = await Team.findOne({ _id: teamId, isActive: true })
@@ -68,7 +69,7 @@ const listTeamMembers = async (teamId) => TeamMember.find({
   .sort({ role: 1, createdAt: 1 })
   .lean();
 
-const addTeamMember = async ({ organizationId, teamId, userId, role = "MEMBER" }) => {
+const addTeamMember = async ({ organizationId, teamId, userId, actorId, role = "MEMBER" }) => {
   if (!["TEAM_LEAD", "MEMBER"].includes(role)) throw new Error("Invalid team role");
 
   const organizationMember = await OrganizationMember.findOne({
@@ -96,8 +97,19 @@ const addTeamMember = async ({ organizationId, teamId, userId, role = "MEMBER" }
     });
   }
 
-  return TeamMember.findById(membership._id)
+  const team = await Team.findById(teamId).select("name organization").lean();
+  const populatedMembership = await TeamMember.findById(membership._id)
     .populate({ path: "user", select: "firstName lastName email profileImage" });
+
+  await createNotifications([{
+    recipientId: userId,
+    actorId,
+    organizationId: team.organization,
+    type: "TEAM_MEMBER_ADDED",
+    message: `You were added to the ${team.name} team`,
+  }]);
+
+  return populatedMembership;
 };
 
 const updateTeamMemberRole = async ({ teamId, memberId, role }) => {
