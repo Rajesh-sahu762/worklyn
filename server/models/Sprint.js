@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
 
-<<<<<<< Updated upstream
 const sprintSchema = new mongoose.Schema(
   {
     project: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Project",
       required: true,
+      index: true,
     },
     name: {
       type: String,
@@ -36,14 +36,6 @@ const sprintSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-=======
-const sprintSchema = new mongoose.Schema({
-  project: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Project",
-    required: true,
-
->>>>>>> Stashed changes
   },
   { timestamps: true },
 );
