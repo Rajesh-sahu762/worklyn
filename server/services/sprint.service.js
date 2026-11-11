@@ -169,7 +169,16 @@ const assignIssueToSprint = async ({ projectId, issueId, sprintId, userId }) => 
 
   const nextSprintId = issue.sprint ? String(issue.sprint) : null;
   if (previousSprintId !== nextSprintId) {
-    const recipients = [...new Set([issue.reporter, issue.assignee].filter(Boolean).map(String))];
+    const projectAdmins = await ProjectMember.find({
+      project: project._id,
+      role: "PROJECT_ADMIN",
+      status: "ACTIVE",
+    }).select("user").lean();
+    const recipients = [...new Set([
+      issue.reporter,
+      issue.assignee,
+      ...projectAdmins.map(member => member.user),
+    ].filter(Boolean).map(String))];
     await createNotifications(recipients.map(recipientId => ({
       recipientId,
       actorId: userId,
